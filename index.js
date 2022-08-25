@@ -8,5 +8,5 @@ app.use(express.json());
 app.use(cors());
 
 app.listen(4000, () => {
-  console.log("App is running in port: 4000");
+  console.log("Asset App is running in port: 4000");
 });
