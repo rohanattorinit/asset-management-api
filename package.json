@@ -1,0 +1,31 @@
+{
+  "name": "asset-management-api",
+  "version": "1.0.0",
+  "description": "This is the server of asset management",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rohanattorinit/asset-management-api.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rohanattorinit/asset-management-api/issues"
+  },
+  "homepage": "https://github.com/rohanattorinit/asset-management-api#readme",
+  "dependencies": {
+    "bcrypt-nodejs": "^0.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "knex": "^2.2.0",
+    "mysql": "^2.18.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.19"
+  }
+}
