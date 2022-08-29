@@ -10,5 +10,5 @@ const employeeRoute = require("./routes/employees");
 app.use("/api/employees", employeeRoute);
 
 app.listen(4000, () => {
-  console.log("Asset App is running in port: 4000");
+   console.log("App is running in port: 4000");
 });
