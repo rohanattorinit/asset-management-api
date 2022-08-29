@@ -42,13 +42,28 @@ router.delete("/:id", async (req, res) => {
       .where("empId", req.params.id)
       .del()
       .then((data) => {
-         res.status(200).json({
-            message: "Employee Deleted successfully",
-         });
+         res.status(200).json({ message: "Employee Deleted successfully" });
       })
       .catch((error) => {
          res.status(400).json({ error });
       });
+});
+
+//login
+router.post("/login", async (req, res) => {
+   const { email, password } = req.body;
+   db.select("email", "password")
+      .from("employees")
+      .where("email", "=", email)
+      .then((data) => {
+         const isValid = bcrypt.compareSync(password, data[0].password);
+         if (isValid) {
+            res.status(200).json({ message: "Login Successfull" });
+         } else {
+            res.status(400).json({ error: "Wrong credintials!" });
+         }
+      })
+      .catch((error) => res.status(400).json({ error: "User not found!" }));
 });
 
 module.exports = router;
