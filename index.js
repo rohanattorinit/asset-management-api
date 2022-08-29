@@ -7,6 +7,9 @@ app.use(cors());
 
 const employeeRoute = require("./routes/employees");
 const brandsRoute = require("./routes/brands");
+const adminRoute = require("./routes/admin");
+
+app.use("/api/admin", adminRoute);
 
 app.use("/api/employees", employeeRoute);
 

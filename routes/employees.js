@@ -34,61 +34,10 @@ router.get("/(:id)", async (req, res) => {
       });
 });
 
-//create an employee
-router.post("/", async (req, res) => {
-   const empData = req.body;
-   db("employees")
-      .insert(empData)
-      .then((data) => {
-         res.status(200).json({
-            message: "Employee created successfully",
-            data,
-         });
-      })
-      .catch((error) => {
-         res.status(400).json({ error });
-      });
-});
-
-//create bulk employees
-router.post("/bulk", async (req, res) => {
-   const empData = req.body;
-
-   // handle csv data
-
-   db("employees")
-      .insert(empData)
-      .then((data) => {
-         res.status(200).json({
-            message: "Employees created successfully",
-            data: data,
-         });
-      })
-      .catch((error) => {
-         res.status(400).json({ error });
-      });
-});
-
 //update an employee
 router.post("/update/(:id)", async (req, res) => {
    const empData = req.body;
    const id = empData.id;
-   db("employees")
-      .insert(empData)
-      .then((data) => {
-         res.status(200).json({
-            message: "Employee created successfully",
-            data,
-         });
-      })
-      .catch((error) => {
-         res.status(400).json({ error });
-      });
-});
-
-//delete an employee
-router.post("/delete/(:id)", async (req, res) => {
-   const empData = req.body;
    db("employees")
       .insert(empData)
       .then((data) => {
