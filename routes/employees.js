@@ -55,16 +55,4 @@ router.post("/update/:id", async (req, res) => {
     });
 });
 
-//chnage password
-router.post("/changePassword/:id", async (req, res) => {
-  const { password } = req.body;
-  const hash = bcrypt.hashSync(password);
-  db("employees")
-    .where("empId", req.params.id)
-    .update({ password: hash })
-    .then(() => {
-      res.status(200).json({ message: "Password Changed Successfully!" });
-    });
-});
-
 module.exports = router;
