@@ -118,11 +118,4 @@ router.post("/addAsset", async (req, res) => {
   }
 });
 
-//allocate an asset to an employee
-router.post("/allocateAsset/:id", (req: Request, res: Response) => {
-  try {
-  } catch (error) {
-    res.status(400).json({ error });
-  }
-});
 export default router;
