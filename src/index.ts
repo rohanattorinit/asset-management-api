@@ -12,6 +12,7 @@ import brandsRoute from "./routes/brands";
 import adminRoute from "./routes/admin";
 import authRoute from "./routes/auth";
 import assetRoute from "./routes/asset";
+
 app.use("/api/auth", authRoute);
 
 app.use("/api/admin", adminRoute);

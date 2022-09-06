@@ -11,7 +11,6 @@ router.post("/", async (req: Request, res: Response) => {
     .from("employees")
     .where("email", "=", email)
     .then(async (data) => {
-      console.log(data[0].password);
       const isValid = await bcrypt.compare(password, data[0].password);
       if (isValid) {
         res
