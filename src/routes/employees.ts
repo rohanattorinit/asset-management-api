@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 const router = express.Router();
 import db from "../config/connection";
+import { isAuth } from "../middleware/auth";
 
 interface Employee {
   empId: number;
@@ -22,7 +23,7 @@ interface UpdateEmployee {
 }
 
 //get all employees
-router.get("/", async (_, res: Response) => {
+router.get("/", isAuth, async (_, res: Response) => {
   db.select("*")
     .from("employees")
     .then((data) => {
