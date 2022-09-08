@@ -8,7 +8,7 @@ import jwt from "jsonwebtoken";
 router.post("/", async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  db.select("email", "password", "isAdmin", "id")
+  db.select("empId", "email", "password", "isAdmin")
     .from("employees")
     .where("email", "=", email)
     .then(async (data) => {
@@ -18,15 +18,23 @@ router.post("/", async (req: Request, res: Response) => {
           expiresIn: "2h",
         });
 
-        res.status(200).json({
-          message: "Login Successfull",
-          data: { isAdmin: data[0].isAdmin, token },
-        });
+        const options = {
+          expires: new Date(Date.now() + 2 * 60 * 60 * 1000),
+          httpOnly: true,
+        };
+
+        res
+          .status(200)
+          .cookie("token", token, options)
+          .json({
+            message: "Login Successfull",
+            data: { isAdmin: data[0].isAdmin, token },
+          });
       } else {
         res.status(400).json({ error: "Wrong credentials!" });
       }
     })
-    .catch((error) => res.status(400).json({ error: "User not found!" }));
+    .catch((error) => res.status(400).json({ error: error }));
 });
 
 //change password
