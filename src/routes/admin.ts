@@ -15,6 +15,11 @@ interface Employee {
   jobTitle: string;
 }
 
+router.post("/", (req: Request, res: Response) => {
+  console.log(req);
+  res.json({ message: "got the req" });
+});
+
 //Add a new employee
 router.post("/addEmployee", async (req: Request, res: Response) => {
   const { empId, name, email, phone, location, jobTitle } = req.body;
@@ -36,6 +41,8 @@ router.post("/addEmployee", async (req: Request, res: Response) => {
     })
     .catch((error) => res.status(400).json({ error }));
 });
+
+
 
 //allocate an asset to an employee
 router.post(
