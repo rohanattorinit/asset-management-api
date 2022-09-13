@@ -30,9 +30,12 @@ interface UpdateEmployee {
 router.post("/", isAuth, async (req: Request, res: Response) => {
   const { empId, name, email, phone, location, jobTitle } = req.body;
   const hash = await bcrypt.hash(email, 10);
-  const employee = {
+  const employee: EmployeeType = {
     empId,
     name,
+    email,
+    password: hash,
+    phone,
     location,
     jobTitle,
   };
