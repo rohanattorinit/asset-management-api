@@ -8,7 +8,7 @@ import jwt from "jsonwebtoken";
 router.post("/", async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  db.select("empId", "email", "password", "isAdmin")
+  db.select("*")
     .from("employees")
     .where("email", "=", email)
     .then(async (data) => {
@@ -23,13 +23,11 @@ router.post("/", async (req: Request, res: Response) => {
           httpOnly: true,
         };
 
-        res
-          .status(200)
-          .cookie("token", token, options)
-          .json({
-            message: "Login Successfull",
-            data: { isAdmin: data[0].isAdmin, token },
-          });
+        res.status(200).cookie("token", token, options).json({
+          message: "Login Successfull",
+          user: data[0],
+          token,
+        });
       } else {
         res.status(400).json({ error: "Wrong credentials!" });
       }
