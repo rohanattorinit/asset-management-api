@@ -1,16 +1,20 @@
+import bcrypt from "bcrypt";
 import express, { Request, Response } from "express";
+import multer from "multer";
+const upload = multer({ dest: "uploads/" });
 const router = express.Router();
 import db from "../config/connection";
-import { isAuth } from "../middleware/auth";
-
-interface Employee {
-  empId: number;
+import { isAuth } from "../middleware/authorization";
+import csv from "csv-parser";
+import fs from "fs";
+export interface EmployeeType {
+  empId: string;
   name: string;
   email: string;
   phone: number;
   password: string;
   location: string;
-  isAdmin: boolean;
+  isAdmin?: boolean;
   jobTitle: string;
 }
 
@@ -21,6 +25,61 @@ interface UpdateEmployee {
   location: string;
   jobTitle: string;
 }
+
+//Add a new employee
+router.post("/", isAuth, async (req: Request, res: Response) => {
+  const { empId, name, email, phone, location, jobTitle } = req.body;
+  const hash = await bcrypt.hash(email, 10);
+  const employee = {
+    empId,
+    name,
+    location,
+    jobTitle,
+  };
+
+  db<EmployeeType>("employees")
+    .insert(employee)
+    .then(() => {
+      res.status(200).json({ message: "Employee added Successfully!" });
+    })
+    .catch((error) => res.status(400).json({ error }));
+});
+
+//Create bulk employees
+router.post(
+  "/create-bulk",
+  upload.single("csvFile"),
+  async (req: Request, res: Response) => {
+    const generateHash = async (email: string) => {
+      return await bcrypt.hash(email, 10);
+    };
+    try {
+      const results: EmployeeType[] = [];
+      fs.createReadStream(req.file?.path!)
+        .pipe(csv())
+        .on("data", (data) => results.push(data))
+        .on("end", async () => {
+          const employees = results.map(async (result: EmployeeType) => {
+            const hash = await generateHash(result.email);
+            result.password = hash;
+          });
+
+          Promise.all(employees).then(function (results) {
+            db<EmployeeType>("employees")
+              .insert(results as unknown as EmployeeType)
+              .then(() => {
+                res
+                  .status(200)
+                  .json({ message: "Employee added Successfully!" });
+              })
+              .catch((error) => res.status(400).json({ error }));
+          });
+        });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+);
 
 //get all employees
 router.get("/", isAuth, async (_, res: Response) => {
@@ -38,7 +97,7 @@ router.get("/", isAuth, async (_, res: Response) => {
 });
 
 //get a single employee
-router.get("/:id", async (req: Request, res: Response) => {
+router.get("/:id", isAuth, async (req: Request, res: Response) => {
   const { id } = req.params;
   db.select("*")
     .from("employees")
@@ -54,7 +113,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 });
 
 //update an employee
-router.post("/update/:id", async (req: Request, res: Response) => {
+router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
   const { name, email, phone, location, jobTitle } = req.body;
   const { id } = req.params;
   const employee: UpdateEmployee = {
@@ -64,13 +123,27 @@ router.post("/update/:id", async (req: Request, res: Response) => {
     location,
     jobTitle,
   };
-  db<Employee>("employees")
+  db<EmployeeType>("employees")
     .where("empId", id)
     .update(employee)
     .then(() => {
       res
         .status(200)
         .json({ message: "Employee details Updated successfully" });
+    })
+    .catch((error) => {
+      res.status(400).json({ error });
+    });
+});
+
+//delete an employee
+router.delete("/:id", isAuth, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  db<EmployeeType>("employees")
+    .where("empId", id)
+    .del()
+    .then(() => {
+      res.status(200).json({ message: "Employee Deleted successfully" });
     })
     .catch((error) => {
       res.status(400).json({ error });
