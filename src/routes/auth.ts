@@ -55,7 +55,7 @@ router.post("/", async (req: Request, res: Response) => {
         res.status(400).json({ error: "Wrong credentials!" });
       }
     })
-    .catch((error) => res.status(400).json({ error: error }));
+    .catch((error) => res.status(400).json({ error: "User not found!" }));
 });
 
 //change password
