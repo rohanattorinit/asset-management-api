@@ -8,17 +8,22 @@ import bcrypt from "bcrypt";
 router.post(
   "/allocateAsset/:empId/:assetId",
   async (req: Request, res: Response) => {
-    console.log(req.params);
     const { empId, assetId } = req.params;
     const assetallocation = {
       empId,
       assetId,
       allocationtime: moment().format("YYYY-MM-DD HH:mm:ss"),
     };
-    db("assetallocation")
-      .insert(assetallocation)
+    db("assets")
+      .update({ status: "allocated" })
+      .where("assetId", assetId)
       .then(() => {
-        res.status(200).json({ message: "Asset allocated Successfully!" });
+        db("assetallocation")
+          .insert(assetallocation)
+          .then(() => {
+            res.status(200).json({ message: "Asset allocated Successfully!" });
+          })
+          .catch((error) => res.status(400).json({ error }));
       })
       .catch((error) => res.status(400).json({ error }));
   }
