@@ -37,6 +37,7 @@ router.post("/", async (req: Request, res: Response) => {
           expires: new Date(Date.now() + 2 * 60 * 60 * 1000),
           httpOnly: true,
         };
+
         const user = {
           empId: data[0].empId,
           name: data[0].name,
