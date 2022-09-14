@@ -27,7 +27,7 @@ interface UpdateEmployee {
 }
 
 //Add a new employee
-router.post("/", isAuth, async (req: Request, res: Response) => {
+router.post("/", async (req: Request, res: Response) => {
   const { empId, name, email, phone, location, jobTitle } = req.body;
   const hash = await bcrypt.hash(email, 10);
   const employee: EmployeeType = {
@@ -85,7 +85,7 @@ router.post(
 );
 
 //get all employees
-router.get("/", isAuth, async (_, res: Response) => {
+router.get("/", async (_, res: Response) => {
   db.select("*")
     .from("employees")
     .then((data) => {
@@ -100,14 +100,14 @@ router.get("/", isAuth, async (_, res: Response) => {
 });
 
 //get a single employee
-router.get("/:id", isAuth, async (req: Request, res: Response) => {
+router.get("/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
   db.select("*")
     .from("employees")
     .where("empId", "=", id)
     .then((data) => {
       if (data[0]) {
-        res.status(200).json({ data });
+        res.status(200).json({ data: data[0] });
       } else {
         res.status(400).json({ error: "Employee not found!" });
       }
@@ -116,7 +116,7 @@ router.get("/:id", isAuth, async (req: Request, res: Response) => {
 });
 
 //update an employee
-router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
+router.post("/update/:id", async (req: Request, res: Response) => {
   const { name, email, phone, location, jobTitle } = req.body;
   const { id } = req.params;
   const employee: UpdateEmployee = {
@@ -140,7 +140,7 @@ router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
 });
 
 //delete an employee
-router.delete("/:id", isAuth, async (req: Request, res: Response) => {
+router.delete("/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
   db<EmployeeType>("employees")
     .where("empId", id)
