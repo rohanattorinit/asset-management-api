@@ -29,4 +29,28 @@ router.post(
   }
 );
 
+//deallocate an asset
+router.post(
+  "/deallocateAsset/:empId/:assetId",
+  async (req: Request, res: Response) => {
+    const { empId, assetId } = req.params;
+    db("assetallocation")
+      .where("empId", empId)
+      .where("assetId", assetId)
+      .del()
+      .then(() => {
+        db("assets")
+          .update({ status: "available" })
+          .where("assetId", assetId)
+          .then(() => {
+            res
+              .status(200)
+              .json({ message: "Asset deallocated Successfully!" });
+          })
+          .catch((error) => res.status(400).json({ error }));
+      })
+      .catch((error) => res.status(400).json({ error }));
+  }
+);
+
 export default router;
