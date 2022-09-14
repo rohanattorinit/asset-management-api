@@ -92,7 +92,7 @@ router.post("/addAsset", async (req, res) => {
     const brandArr = await db("brands")
       .select("brandId")
       .where("name", "=", brandName);
-    const brandId = brandArr[0].id;
+    const brandId = brandArr[0].brandId;
 
     const asset: Asset = {
       brandId,
