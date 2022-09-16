@@ -63,23 +63,31 @@ router.post(
         .on("data", (data) => results.push(data))
         .on("end", async () => {
           const employees = results.map(async (result: EmployeeType) => {
-            const hash = await generateHash(result.email);
-            result.password = hash;
+            result.password = await generateHash(result.email);
+            return result;
           });
 
-          Promise.all(employees).then(function (results) {
+          Promise.all(employees).then((results) => {
             db<EmployeeType>("employees")
-              .insert(results as unknown as EmployeeType)
+              .insert(results)
               .then(() => {
+                fs.unlinkSync(req.file?.path!);
                 res
                   .status(200)
                   .json({ message: "Employee added Successfully!" });
               })
-              .catch((error) => res.status(400).json({ error }));
+              .catch((error) => {
+                console.log("inner", error);
+                res.status(400).json({
+                  error: "Error occured while trying to add employee",
+                });
+              });
           });
         });
     } catch (error) {
-      console.log(error);
+      res
+        .status(400)
+        .json({ error: "Error occured while trying to add employee" });
     }
   }
 );

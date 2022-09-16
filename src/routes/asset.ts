@@ -2,12 +2,16 @@ import express, { Request, Response } from "express";
 const router = express.Router();
 import db from "../config/connection";
 import moment from "moment";
+import multer from "multer";
+const upload = multer({ dest: "uploads/" });
+import csv from "csv-parser";
+import fs from "fs";
 
 interface Asset {
   assetId?: number;
   brandId: number;
   name: string;
-  assetType: string;
+  assetType: "software" | "hardware";
   category: string;
   modelNo: number;
   description: string;
@@ -117,5 +121,37 @@ router.post("/addAsset", async (req, res) => {
     res.status(400).json({ error });
   }
 });
+
+//Create bulk assets
+router.post(
+  "/create-bulk",
+  upload.single("csvFile"),
+  async (req: Request, res: Response) => {
+    try {
+      const results: Asset[] = [];
+      fs.createReadStream(req.file?.path!)
+        .pipe(csv())
+        .on("data", (data) => results.push(data))
+        .on("end", async () => {
+          db<Asset>("assets")
+            .insert(results)
+            .then(() => {
+              fs.unlinkSync(req.file?.path!);
+              res.status(200).json({ message: "Asset added Successfully!" });
+            })
+            .catch((error) => {
+              console.log("inner", error);
+              res.status(400).json({
+                error: "Error occured while trying to add asset",
+              });
+            });
+        });
+    } catch (error) {
+      res
+        .status(400)
+        .json({ error: "Error occured while trying to add employee" });
+    }
+  }
+);
 
 export default router;
