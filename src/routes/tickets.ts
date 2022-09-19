@@ -2,7 +2,6 @@ import express, { Request, Response } from "express";
 const router = express.Router();
 import db from "../config/connection";
 import moment from "moment";
-import { stat } from "fs";
 
 interface Ticket {
   ticketId?: number;
