@@ -62,12 +62,15 @@ router.post(
         .pipe(csv())
         .on("data", (data) => results.push(data))
         .on("end", async () => {
+          console.log(results);
           const employees = results.map(async (result: EmployeeType) => {
             const hash = await generateHash(result.email);
             result.password = hash;
+            return result;
           });
 
-          Promise.all(employees).then(function (results) {
+          Promise.all(employees).then((results) => {
+            console.log("employees", results);
             db<EmployeeType>("employees")
               .insert(results as unknown as EmployeeType)
               .then(() => {
@@ -107,7 +110,7 @@ router.get("/:id", async (req: Request, res: Response) => {
     .where("empId", "=", id)
     .then((data) => {
       if (data[0]) {
-        res.status(200).json({ data });
+        res.status(200).json({ data: data[0] });
       } else {
         res.status(400).json({ error: "Employee not found!" });
       }
