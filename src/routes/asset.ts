@@ -2,6 +2,19 @@ import express, { Request, Response } from "express";
 const router = express.Router();
 import db from "../config/connection";
 import moment from "moment";
+import { isAdmin, isAuth } from "../middleware/authorization";
+import multer from "multer";
+const upload = multer({
+  dest: "/uploads",
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype == "text/csv") {
+      cb(null, true);
+    } else {
+      cb(null, false);
+      return cb(new Error("Only .csv files are allowed!"));
+    }
+  },
+});
 
 interface Asset {
   assetId?: number;
@@ -17,7 +30,7 @@ interface Asset {
 }
 
 //get all assets
-router.get("/", async (_, res: Response) => {
+router.get("/", isAuth, async (_, res: Response) => {
   db<Asset>("assets")
     .select("*")
     .then((data) => {
@@ -112,10 +125,51 @@ router.post("/addAsset", async (req, res) => {
         res.status(200).json({
           message: "Asset created successfully",
         })
+      )
+      .catch((error) =>
+        res.status(400).json({ error: "Error occured while creating asset" })
       );
   } catch (error) {
     res.status(400).json({ error });
   }
 });
 
+router.post(
+  "/create-bulk",
+  isAuth,
+  isAdmin,
+  upload.single("csvFile"),
+  async (req: Request, res: Response) => {
+    //validate size and type of file
+
+    //retrieve brandId for each record
+    //find current time for each record
+
+    try {
+      const results: EmployeeType[] = [];
+      fs.createReadStream(req.file?.path!)
+        .pipe(csv())
+        .on("data", (data) => results.push(data))
+        .on("end", async () => {
+          const employees = results.map(async (result: EmployeeType) => {
+            const hash = await generateHash(result.email);
+            result.password = hash;
+            return result;
+          });
+
+          Promise.all(employees).then((results) => {
+            db<EmployeeType>("employees")
+              .insert(results as unknown as EmployeeType)
+              .then(() => {
+                res
+                  .status(200)
+                  .json({ message: "Employee added Successfully!" });
+              });
+          });
+        });
+    } catch (error) {
+      res.status(400).json({ error: "Error while creating adding employees" });
+    }
+  }
+);
 export default router;
