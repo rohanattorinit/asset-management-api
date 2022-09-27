@@ -8,7 +8,6 @@ import db from "../config/connection";
 import { isAuth } from "../middleware/authorization";
 import csv from "csv-parser";
 import fs from "fs";
-import cors from "cors";
 export interface EmployeeType {
   empId: string;
   name: string;

@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 const router = express.Router();
 import db from "../config/connection";
+import { isAuth } from "../middleware/authorization";
 
 interface Brand {
   brandId?: number;
@@ -8,7 +9,7 @@ interface Brand {
 }
 
 //add new brand
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", isAuth, async (req: Request, res: Response) => {
   const { name }: { name: string } = req.body;
   db<Brand>("brands")
     .insert({
@@ -21,7 +22,7 @@ router.post("/", async (req: Request, res: Response) => {
 });
 
 //get all brands
-router.get("/", async (_, res: Response) => {
+router.get("/", isAuth, async (_, res: Response) => {
   db<Brand>("brands")
     .select("*")
     .then((data: any) => {

@@ -4,6 +4,8 @@ import db from "../config/connection";
 import moment from "moment";
 import { isAdmin, isAuth } from "../middleware/authorization";
 import multer from "multer";
+import fs from "fs";
+import csv from "csv-parser";
 const upload = multer({
   dest: "/uploads",
   fileFilter: (req, file, cb) => {
@@ -30,7 +32,7 @@ interface Asset {
 }
 
 //get all assets
-router.get("/", isAuth, async (_, res: Response) => {
+router.get("/", isAuth, isAdmin, async (_, res: Response) => {
   db<Asset>("assets")
     .select("*")
     .then((data) => {
@@ -45,25 +47,30 @@ router.get("/", isAuth, async (_, res: Response) => {
 });
 
 //get a single asset
-router.get("/:assetId", async (req: Request, res: Response) => {
-  const { assetId } = req.params;
-  db<Asset>("assets")
-    .select("*")
-    .join("brands", "assets.brandId", "=", "brands.brandid")
-    .where("assetId", "=", assetId)
-    .then((data) => {
-      res.status(200).json({
-        message: `Asset ${assetId} fetched successfully`,
-        data: data,
+router.get(
+  "/:assetId",
+  isAuth,
+  isAdmin,
+  async (req: Request, res: Response) => {
+    const { assetId } = req.params;
+    db<Asset>("assets")
+      .select("*")
+      .join("brands", "assets.brandId", "=", "brands.brandid")
+      .where("assetId", "=", assetId)
+      .then((data) => {
+        res.status(200).json({
+          message: `Asset ${assetId} fetched successfully`,
+          data: data,
+        });
+      })
+      .catch((error) => {
+        res.status(400).json({ error });
       });
-    })
-    .catch((error) => {
-      res.status(400).json({ error });
-    });
-});
+  }
+);
 
 //get all assets of a single employee
-router.get("/employeeAssets/:empId", async (req, res) => {
+router.get("/employeeAssets/:empId", isAuth, async (req, res) => {
   const { empId } = req.params;
   db.select(
     "assets.assetId",
@@ -88,7 +95,7 @@ router.get("/employeeAssets/:empId", async (req, res) => {
 });
 
 //create a new asset
-router.post("/addAsset", async (req, res) => {
+router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
   try {
     const {
       assetName,
@@ -140,35 +147,36 @@ router.post(
   isAdmin,
   upload.single("csvFile"),
   async (req: Request, res: Response) => {
-    //validate size and type of file
-
-    //retrieve brandId for each record
-    //find current time for each record
-
     try {
-      const results: EmployeeType[] = [];
+      const results: Asset[] = [];
       fs.createReadStream(req.file?.path!)
         .pipe(csv())
-        .on("data", (data) => results.push(data))
+        .on("data", (data: Asset) => results.push(data))
         .on("end", async () => {
-          const employees = results.map(async (result: EmployeeType) => {
-            const hash = await generateHash(result.email);
-            result.password = hash;
-            return result;
+          const assets = results.map(async (result: any) => {
+            return await db("brands")
+              .select("brandId")
+              .where("name", "=", result.brandName)
+              .then((data) => {
+                delete result["brandName"];
+                result.brandId = data[0].brandId;
+                result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
+                console.log(result);
+                return result;
+              });
           });
-
-          Promise.all(employees).then((results) => {
-            db<EmployeeType>("employees")
-              .insert(results as unknown as EmployeeType)
+          console.log("asset added", assets);
+          Promise.all(assets).then((results) => {
+            console.log("asset resolved", results);
+            db<Asset>("assets")
+              .insert(results as unknown as Asset)
               .then(() => {
-                res
-                  .status(200)
-                  .json({ message: "Employee added Successfully!" });
+                res.status(200).json({ message: "Assets added Successfully!" });
               });
           });
         });
     } catch (error) {
-      res.status(400).json({ error: "Error while creating adding employees" });
+      res.status(400).json({ error: "Error while creating adding assets" });
     }
   }
 );
