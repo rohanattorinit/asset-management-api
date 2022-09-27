@@ -62,12 +62,15 @@ router.post(
         .pipe(csv())
         .on("data", (data) => results.push(data))
         .on("end", async () => {
+          console.log(results);
           const employees = results.map(async (result: EmployeeType) => {
             const hash = await generateHash(result.email);
             result.password = hash;
+            return result;
           });
 
-          Promise.all(employees).then(function (results) {
+          Promise.all(employees).then((results) => {
+            console.log("employees", results);
             db<EmployeeType>("employees")
               .insert(results as unknown as EmployeeType)
               .then(() => {

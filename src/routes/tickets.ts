@@ -2,7 +2,6 @@ import express, { Request, Response } from "express";
 const router = express.Router();
 import db from "../config/connection";
 import moment from "moment";
-import { stat } from "fs";
 
 interface Ticket {
   ticketId?: number;
@@ -84,7 +83,7 @@ router.get("/:ticketId", async (req: Request, res: Response) => {
       .then((data) => {
         res.status(200).json({
           message: `Ticket fetched successfully`,
-          data,
+          data: data[0],
         });
       });
   } catch (error) {
