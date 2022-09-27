@@ -56,4 +56,5 @@ router.post(
       .catch((error) => res.status(400).json({ error }));
   }
 );
+
 export default router;
