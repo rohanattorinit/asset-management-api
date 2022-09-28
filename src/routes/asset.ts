@@ -21,6 +21,7 @@ interface Asset {
    addedTime: string;
    isRented?: boolean;
    vendor?: string;
+   rent?: number;
    deposit?: number;
    rentStartDate?: string;
    rentEndDate?: string;
@@ -103,6 +104,7 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
          usability,
          isRented,
          vendor,
+         rent,
          deposit,
          rentStartDate,
          rentEndDate,
@@ -135,6 +137,7 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
               addedTime: moment().format("YYYY-MM-DD HH:mm:ss"),
               isRented,
               vendor,
+              rent,
               deposit,
               rentStartDate,
               rentEndDate,
