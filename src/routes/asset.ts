@@ -32,18 +32,36 @@ interface Asset {
 }
 
 //get all assets
-router.get("/", isAuth, isAdmin, async (_, res: Response) => {
-  db<Asset>("assets")
-    .select("*")
-    .then((data) => {
-      res.status(200).json({
-        message: "All assets fetched successfully",
-        data: data,
+router.get("/", isAuth, isAdmin, async (req, res: Response) => {
+  const name = req.query.name;
+  if (name) {
+    db<Asset>("assets")
+      .select("*")
+      .where("status", "=", "available")
+      .where("usability", "=", "usable")
+      .where("name", "like", `%${name}%`)
+      .then((data) => {
+        res.status(200).json({
+          message: "All assets fetched successfully",
+          data: data,
+        });
+      })
+      .catch((error) => {
+        res.status(400).json({ error });
       });
-    })
-    .catch((error) => {
-      res.status(400).json({ error });
-    });
+  } else {
+    db<Asset>("assets")
+      .select("*")
+      .then((data) => {
+        res.status(200).json({
+          message: "All assets fetched successfully",
+          data: data,
+        });
+      })
+      .catch((error) => {
+        res.status(400).json({ error });
+      });
+  }
 });
 
 //get a single asset
@@ -74,7 +92,7 @@ router.get("/employeeAssets/:empId", isAuth, async (req, res) => {
   const { empId } = req.params;
   db.select(
     "assets.assetId",
-    "brands.name",
+    "assets.name",
     "assets.modelno",
     "assets.category",
     "assetallocation.allocationTime"
@@ -161,11 +179,11 @@ router.post(
                 delete result["brandName"];
                 result.brandId = data[0].brandId;
                 result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
-                console.log(result);
+
                 return result;
               });
           });
-          console.log("asset added", assets);
+
           Promise.all(assets).then((results) => {
             console.log("asset resolved", results);
             db<Asset>("assets")

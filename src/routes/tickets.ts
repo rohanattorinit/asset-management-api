@@ -65,14 +65,27 @@ router.get(
 //get all tickets
 router.get("/", isAuth, isAdmin, async (req: Request, res: Response) => {
   try {
-    db<Ticket>("tickets")
-      .select("*")
-      .then((data) => {
-        res.status(200).json({
-          message: `All Tickets fetched successfully`,
-          data,
+    const title = req.query.title;
+    if (title) {
+      db<Ticket>("tickets")
+        .select("*")
+        .where("title", "like", `%${title}`)
+        .then((data) => {
+          res.status(200).json({
+            message: `All Tickets fetched successfully`,
+            data,
+          });
         });
-      });
+    } else {
+      db<Ticket>("tickets")
+        .select("*")
+        .then((data) => {
+          res.status(200).json({
+            message: `All Tickets fetched successfully`,
+            data,
+          });
+        });
+    }
   } catch (error) {
     res.status(400).json({ error });
   }
@@ -138,6 +151,33 @@ router.post(
           .json({ message: "Ticket status updated Successfully!" });
       })
       .catch((error) => res.status(400).json({ error }));
+  }
+);
+
+router.get(
+  "/getTicketDetails/:ticketId",
+  isAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { ticketId } = req.params;
+      db.from("ticketstatus")
+        .join("tickets", "tickets.ticketId", "ticketstatus.ticketId")
+        .where("tickets.ticketId", ticketId!)
+        .select(
+          "ticketstatus.ticketstatusId",
+          "ticketstatus.note",
+          "ticketstatus.createdAt"
+        )
+        .then((data) => {
+          console.log(data);
+          res.status(200).json({
+            message: `All Tickets fetched successfully for employee`,
+            data,
+          });
+        });
+    } catch (error) {
+      res.status(400).json({ error });
+    }
   }
 );
 
