@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/rohanattorinit/asset-management-api#readme",
   "dependencies": {
+    "apisauce": "^2.1.6",
     "bcrypt": "^5.0.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -29,7 +30,8 @@
     "knex": "^2.2.0",
     "moment": "^2.29.4",
     "multer": "^1.4.5-lts.1",
-    "mysql2": "^2.3.3"
+    "mysql2": "^2.3.3",
+    "ngrok": "^4.3.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",

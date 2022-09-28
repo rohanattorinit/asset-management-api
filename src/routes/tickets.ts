@@ -1,3 +1,4 @@
+import { isAdmin, isAuth } from "./../middleware/authorization";
 import express, { Request, Response } from "express";
 const router = express.Router();
 import db from "../config/connection";
@@ -21,7 +22,7 @@ interface TicketStatus {
 }
 
 //create a new ticket
-router.post("/createTicket", async (req: Request, res: Response) => {
+router.post("/createTicket", isAuth, async (req: Request, res: Response) => {
   const { empId, assetId, title, description } = req.body;
   const ticket: Ticket = {
     empId,
@@ -40,25 +41,29 @@ router.post("/createTicket", async (req: Request, res: Response) => {
 });
 
 //view created ticket
-router.get("/employeeTickets/:empId", async (req: Request, res: Response) => {
-  try {
-    const { empId } = req.params;
-    db<Ticket>("tickets")
-      .select("*")
-      .where("empId", "=", empId)
-      .then((data) => {
-        res.status(200).json({
-          message: `Tickets fetched successfully for employee ${empId}`,
-          data,
+router.get(
+  "/employeeTickets/:empId",
+  isAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { empId } = req.params;
+      db<Ticket>("tickets")
+        .select("*")
+        .where("empId", "=", empId)
+        .then((data) => {
+          res.status(200).json({
+            message: `Tickets fetched successfully for employee ${empId}`,
+            data,
+          });
         });
-      });
-  } catch (error) {
-    res.status(400).json({ error });
+    } catch (error) {
+      res.status(400).json({ error });
+    }
   }
-});
+);
 
 //get all tickets
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", isAuth, isAdmin, async (req: Request, res: Response) => {
   try {
     db<Ticket>("tickets")
       .select("*")
@@ -74,7 +79,7 @@ router.get("/", async (req: Request, res: Response) => {
 });
 
 //get single ticket
-router.get("/:ticketId", async (req: Request, res: Response) => {
+router.get("/:ticketId", isAuth, async (req: Request, res: Response) => {
   const { ticketId } = req.params;
   try {
     db<Ticket>("tickets")
@@ -92,36 +97,48 @@ router.get("/:ticketId", async (req: Request, res: Response) => {
 });
 
 //comment/note on a ticket
-router.post("/note/:ticketId", async (req: Request, res: Response) => {
-  const { ticketId } = req.params;
-  const { note }: { note: string } = req.body;
-  const ticketStatus = {
-    ticketId: parseInt(ticketId, 10),
-    note,
-    createdAt: moment().format("YYYY-MM-DD HH:mm:ss"),
-  };
-  db<TicketStatus>("ticketstatus")
-    .insert(ticketStatus)
-    .then(() => {
-      res.status(200).json({ message: "Ticket note added Successfully!" });
-    })
-    .catch((error) => res.status(400).json({ error }));
-});
+router.post(
+  "/note/:ticketId",
+  isAuth,
+  isAdmin,
+  async (req: Request, res: Response) => {
+    const { ticketId } = req.params;
+    const { note }: { note: string } = req.body;
+    const ticketStatus = {
+      ticketId: parseInt(ticketId, 10),
+      note,
+      createdAt: moment().format("YYYY-MM-DD HH:mm:ss"),
+    };
+    db<TicketStatus>("ticketstatus")
+      .insert(ticketStatus)
+      .then(() => {
+        res.status(200).json({ message: "Ticket note added Successfully!" });
+      })
+      .catch((error) => res.status(400).json({ error }));
+  }
+);
 
 //update status of a ticket
-router.post("/changeStatus/:ticketId", async (req: Request, res: Response) => {
-  const { ticketId } = req.params;
-  const { status }: { status: "active" | "pending" | "closed" } = req.body;
+router.post(
+  "/changeStatus/:ticketId",
+  isAuth,
+  isAdmin,
+  async (req: Request, res: Response) => {
+    const { ticketId } = req.params;
+    const { status }: { status: "active" | "pending" | "closed" } = req.body;
 
-  db<Ticket>("tickets")
-    .update({
-      ticketStatus: status,
-    })
-    .where("ticketId", "=", ticketId)
-    .then(() => {
-      res.status(200).json({ message: "Ticket status updated Successfully!" });
-    })
-    .catch((error) => res.status(400).json({ error }));
-});
+    db<Ticket>("tickets")
+      .update({
+        ticketStatus: status,
+      })
+      .where("ticketId", "=", ticketId)
+      .then(() => {
+        res
+          .status(200)
+          .json({ message: "Ticket status updated Successfully!" });
+      })
+      .catch((error) => res.status(400).json({ error }));
+  }
+);
 
 export default router;
