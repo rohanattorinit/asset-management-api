@@ -9,152 +9,154 @@ import { isAuth } from "../middleware/authorization";
 import csv from "csv-parser";
 import fs from "fs";
 export interface EmployeeType {
-  empId: string;
-  name: string;
-  email: string;
-  phone: number;
-  password: string;
-  location: string;
-  isAdmin?: boolean;
-  jobTitle: string;
+   empId: string;
+   name: string;
+   email: string;
+   phone: number;
+   password: string;
+   location: string;
+   isAdmin?: boolean;
+   jobTitle: string;
 }
 
 interface UpdateEmployee {
-  name: string;
-  email: string;
-  phone: number;
-  location: string;
-  jobTitle: string;
+   name: string;
+   email: string;
+   phone: number;
+   location: string;
+   jobTitle: string;
 }
 
 //Add a new employee
 router.post("/", isAuth, isAdmin, async (req: Request, res: Response) => {
-  const { empId, name, email, phone, location, jobTitle } = req.body;
-  const hash = await bcrypt.hash(email, 10);
-  const employee: EmployeeType = {
-    empId,
-    name,
-    email,
-    password: hash,
-    phone,
-    location,
-    jobTitle,
-  };
+   const { empId, name, email, phone, location, jobTitle } = req.body;
+   const hash = await bcrypt.hash(email, 10);
+   const employee: EmployeeType = {
+      empId,
+      name,
+      email,
+      password: hash,
+      phone,
+      location,
+      jobTitle,
+   };
 
-  db<EmployeeType>("employees")
-    .insert(employee)
-    .then(() => {
-      res.status(200).json({ message: "Employee added Successfully!" });
-    })
-    .catch((error) => res.status(400).json({ error }));
+   db<EmployeeType>("employees")
+      .insert(employee)
+      .then(() => {
+         res.status(200).json({ message: "Employee added Successfully!" });
+      })
+      .catch((error) => res.status(400).json({ error }));
 });
 
 //Create bulk employees
 router.post(
-  "/create-bulk",
-  isAuth,
-  isAdmin,
-  upload.single("csvFile"),
-  async (req: Request, res: Response) => {
-    const generateHash = async (email: string) => {
-      return await bcrypt.hash(email, 10);
-    };
-    try {
-      //validate size and type of file
-      const results: EmployeeType[] = [];
-      fs.createReadStream(req.file?.path!)
-        .pipe(csv())
-        .on("data", (data) => results.push(data))
-        .on("end", async () => {
-          const employees = results.map(async (result: EmployeeType) => {
-            const hash = await generateHash(result.email);
-            result.password = hash;
-            return result;
-          });
+   "/create-bulk",
+   isAuth,
+   isAdmin,
+   upload.single("csvFile"),
+   async (req: Request, res: Response) => {
+      const generateHash = async (email: string) => {
+         return await bcrypt.hash(email, 10);
+      };
+      try {
+         //validate size and type of file
+         const results: EmployeeType[] = [];
+         fs.createReadStream(req.file?.path!)
+            .pipe(csv())
+            .on("data", (data) => results.push(data))
+            .on("end", async () => {
+               const employees = results.map(async (result: EmployeeType) => {
+                  const hash = await generateHash(result.email);
+                  result.password = hash;
+                  return result;
+               });
 
-          Promise.all(employees).then((results) => {
-            db<EmployeeType>("employees")
-              .insert(results as unknown as EmployeeType)
-              .then(() => {
-                res
-                  .status(200)
-                  .json({ message: "Employee added Successfully!" });
-              });
-          });
-        });
-    } catch (error) {
-      res.status(400).json({ error: "Error while creating adding employees" });
-    }
-  }
+               Promise.all(employees).then((results) => {
+                  db<EmployeeType>("employees")
+                     .insert(results as unknown as EmployeeType)
+                     .then(() => {
+                        res.status(200).json({
+                           message: "Employee added Successfully!",
+                        });
+                     });
+               });
+            });
+      } catch (error) {
+         res.status(400).json({
+            error: "Error while creating adding employees",
+         });
+      }
+   }
 );
 
 //get all employees
 router.get("/", isAuth, isAdmin, async (_, res: Response) => {
-  db.select("*")
-    .from("employees")
-    .then((data) => {
-      res.status(200).json({
-        message: "All employees fetched successfully",
-        data: data,
+   db.select("*")
+      .from("employees")
+      .then((data) => {
+         res.status(200).json({
+            message: "All employees fetched successfully",
+            data: data,
+         });
+      })
+      .catch((error) => {
+         res.status(400).json({ error });
       });
-    })
-    .catch((error) => {
-      res.status(400).json({ error });
-    });
 });
 
 //get a single employee
 router.get("/:id", isAuth, isAdmin, async (req: Request, res: Response) => {
-  const { id } = req.params;
-  db.select("*")
-    .from("employees")
-    .where("empId", "=", id)
-    .then((data) => {
-      if (data[0]) {
-        res.status(200).json({ data: data[0] });
-      } else {
-        res.status(400).json({ error: "Employee not found!" });
-      }
-    })
-    .catch((error) => res.status(400).json({ error }));
+   const { id } = req.params;
+   db.select("*")
+      .from("employees")
+      .where("empId", "=", id)
+      .then((data) => {
+         if (data[0]) {
+            res.status(200).json({ data: data[0] });
+         } else {
+            res.status(400).json({ error: "Employee not found!" });
+         }
+      })
+      .catch((error) => res.status(400).json({ error }));
 });
 
 //update an employee
 router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
-  const { name, email, phone, location, jobTitle } = req.body;
-  const { id } = req.params;
-  const employee: UpdateEmployee = {
-    name,
-    email,
-    phone,
-    location,
-    jobTitle,
-  };
-  db<EmployeeType>("employees")
-    .where("empId", id)
-    .update(employee)
-    .then(() => {
-      res
-        .status(200)
-        .json({ message: "Employee details Updated successfully" });
-    })
-    .catch((error) => {
-      res.status(400).json({ error });
-    });
+   const { name, email, phone, location, jobTitle } = req.body;
+   const { id } = req.params;
+   const employee: UpdateEmployee = {
+      name,
+      email,
+      phone,
+      location,
+      jobTitle,
+   };
+   db<EmployeeType>("employees")
+      .where("empId", id)
+      .update(employee)
+      .then(() => {
+         res.status(200).json({
+            message: "Employee details Updated successfully",
+         });
+      })
+      .catch((error) => {
+         res.status(400).json({ error });
+      });
 });
 
 //delete an employee
 router.delete("/:id", isAuth, isAdmin, async (req: Request, res: Response) => {
-  const { id } = req.params;
-  db<EmployeeType>("employees")
-    .where("empId", id)
-    .del()
-    .then(() => {
-      res.status(200).json({ message: "Employee Deleted successfully" });
-    })
-    .catch((error) => {
-      res.status(400).json({ error });
-    });
+   const { id } = req.params;
+   db<EmployeeType>("employees")
+      .where("empId", id)
+      .del()
+      .then(() => {
+         res.status(200).json({ message: "Employee Deleted successfully" });
+      })
+      .catch((error) => {
+         res.status(400).json({ error });
+      });
 });
 
 export default router;
