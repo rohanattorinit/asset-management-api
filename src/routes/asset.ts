@@ -33,35 +33,30 @@ interface Asset {
 
 //get all assets
 router.get("/", isAuth, isAdmin, async (req, res: Response) => {
-  const name = req.query.name;
-  if (name) {
-    db<Asset>("assets")
-      .select("*")
-      .where("status", "=", "available")
-      .where("usability", "=", "usable")
-      .where("name", "like", `%${name}%`)
-      .then((data) => {
-        res.status(200).json({
-          message: "All assets fetched successfully",
-          data: data,
-        });
-      })
-      .catch((error) => {
-        res.status(400).json({ error });
+  const { name, allocate, assetType, isRented } = req?.query;
+
+  db<Asset>("assets")
+    .select("*")
+    .modify((queryBuilder) => {
+      if (allocate) {
+        queryBuilder?.where("status", `available`).where("usability", "usable");
+      } else if (isRented === "0" || isRented === "1") {
+        queryBuilder?.where("isRented", "=", `${isRented}`);
+      } else if (assetType) {
+        queryBuilder?.where("assetType", "=", `${assetType}`);
+      } else if (name) {
+        queryBuilder.where("name", "like", `%${name}%`);
+      }
+    })
+    .then((data) => {
+      res.status(200).json({
+        message: "All assets fetched successfully",
+        data: data,
       });
-  } else {
-    db<Asset>("assets")
-      .select("*")
-      .then((data) => {
-        res.status(200).json({
-          message: "All assets fetched successfully",
-          data: data,
-        });
-      })
-      .catch((error) => {
-        res.status(400).json({ error });
-      });
-  }
+    })
+    .catch((error) => {
+      res.status(400).json({ error: "Error occured while fetching assets!" });
+    });
 });
 
 //get a single asset

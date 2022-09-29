@@ -65,27 +65,24 @@ router.get(
 //get all tickets
 router.get("/", isAuth, isAdmin, async (req: Request, res: Response) => {
   try {
-    const title = req.query.title;
-    if (title) {
-      db<Ticket>("tickets")
-        .select("*")
-        .where("title", "like", `%${title}`)
-        .then((data) => {
-          res.status(200).json({
-            message: `All Tickets fetched successfully`,
-            data,
-          });
+    const { title, status } = req.query;
+
+    db<Ticket>("tickets")
+      .select("*")
+      .where("title", "like", `%${title}`)
+      .modify((queryBuilder) => {
+        if (status) {
+          queryBuilder?.where("ticketStatus", "=", `${status}`);
+        } else if (title) {
+          queryBuilder?.where("title", "like", `%${title}%`);
+        }
+      })
+      .then((data) => {
+        res.status(200).json({
+          message: `All Tickets fetched successfully`,
+          data,
         });
-    } else {
-      db<Ticket>("tickets")
-        .select("*")
-        .then((data) => {
-          res.status(200).json({
-            message: `All Tickets fetched successfully`,
-            data,
-          });
-        });
-    }
+      });
   } catch (error) {
     res.status(400).json({ error });
   }
