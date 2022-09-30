@@ -94,7 +94,6 @@ router.post(
 
 router.get("/", isAuth, isAdmin, async (req, res: Response) => {
   const name = req?.query?.name;
-
   db.select("*")
     .from("employees")
     .modify((queryBuilder) => {
@@ -115,7 +114,6 @@ router.get("/", isAuth, isAdmin, async (req, res: Response) => {
     });
 
 });
-
 //get a single employee
 router.get("/:id", isAuth, isAdmin, async (req: Request, res: Response) => {
    const { id } = req.params;
