@@ -9,27 +9,63 @@ import csv from "csv-parser";
 const upload = multer({ dest: "uploads/" });
 
 interface Asset {
-   assetId?: number;
-   brandId: number;
-   name: string;
-   assetType: string;
-   category: string;
-   modelNo: string;
-   description: string;
-   status: "allocated" | "available";
-   usability: "usable" | "unusable" | "disposed";
-   addedTime: string;
-   isRented?: boolean;
-   vendor?: string;
-   rent?: number;
-   deposit?: number;
-   rentStartDate?: string;
-   rentEndDate?: string;
+
+  assetId?: number;
+  brandId: number;
+  name: string;
+  assetType: string;
+  category: string;
+  modelNo: number;
+  description: string;
+  status: "allocated" | "available";
+  usability: "usable" | "unusable" | "disposed";
+  asset_location: string;
+  addedTime: string;
+  isRented?: boolean;
+  vendor?: string;
+  rent?: number;
+  deposit?: number;
+  rentStartDate?: string;
+  rentEndDate?: string;
 }
 
 //get all assets
-router.get("/", isAuth, isAdmin, async (_, res: Response) => {
-   db<Asset>("assets")
+router.get("/", isAuth, isAdmin, async (req, res: Response) => {
+  const { name, allocate, assetType, isRented } = req?.query;
+
+  db<Asset>("assets")
+    .select("*")
+    .modify((queryBuilder) => {
+      if (allocate) {
+        queryBuilder?.where("status", `available`).where("usability", "usable");
+      } else if (isRented === "0" || isRented === "1") {
+        queryBuilder?.where("isRented", "=", `${isRented}`);
+      } else if (assetType) {
+        queryBuilder?.where("assetType", "=", `${assetType}`);
+      } else if (name) {
+        queryBuilder.where("name", "like", `%${name}%`);
+      }
+    })
+    .then((data) => {
+      res.status(200).json({
+        message: "All assets fetched successfully",
+        data: data,
+      });
+    })
+    .catch((error) => {
+      res.status(400).json({ error: "Error occured while fetching assets!" });
+    });
+});
+
+//get a single asset
+router.get
+  "/:assetId",
+  isAuth,
+  isAdmin,
+  async (req: Request, res: Response) => {
+    const { assetId } = req.params;
+    db<Asset>("assets")
+
       .select("*")
       .then((data) => {
          res.status(200).json({
@@ -67,6 +103,7 @@ router.get(
 
 //get all assets of a single employee
 router.get("/employeeAssets/:empId", isAuth, async (req, res) => {
+
    const { empId } = req.params;
    db.select(
       "assets.assetId",
@@ -87,11 +124,13 @@ router.get("/employeeAssets/:empId", isAuth, async (req, res) => {
       })
       .catch((error) => {
          res.status(400).json({ error });
+
       });
 });
 
 //create a new asset
 router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
+
    try {
       const {
          assetName,
@@ -214,5 +253,6 @@ router.post(
          res.status(400).json({ error: "Error while creating adding assets" });
       }
    }
+
 );
 export default router;

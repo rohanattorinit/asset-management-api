@@ -65,8 +65,18 @@ router.get(
 //get all tickets
 router.get("/", isAuth, isAdmin, async (req: Request, res: Response) => {
   try {
+    const { title, status } = req.query;
+
     db<Ticket>("tickets")
       .select("*")
+      .where("title", "like", `%${title}`)
+      .modify((queryBuilder) => {
+        if (status) {
+          queryBuilder?.where("ticketStatus", "=", `${status}`);
+        } else if (title) {
+          queryBuilder?.where("title", "like", `%${title}%`);
+        }
+      })
       .then((data) => {
         res.status(200).json({
           message: `All Tickets fetched successfully`,
@@ -138,6 +148,37 @@ router.post(
           .json({ message: "Ticket status updated Successfully!" });
       })
       .catch((error) => res.status(400).json({ error }));
+  }
+);
+
+router.get(
+  "/getTicketDetails/:ticketId",
+  isAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const { ticketId } = req.params;
+      db.from("ticketstatus")
+        .join("tickets", "tickets.ticketId", "ticketstatus.ticketId")
+        .where("tickets.ticketId", ticketId!)
+        .select(
+          "ticketstatus.ticketstatusId",
+          "ticketstatus.note",
+          "ticketstatus.createdAt"
+        )
+        .then((data) => {
+          res.status(200).json({
+            message: `All updated notes fetched successfully for employee`,
+            data,
+          });
+        });
+    } catch (error) {
+      res
+        .status(400)
+        .json({
+          error: "Error occured while fetching tickets from db",
+          errorMsg: error,
+        });
+    }
   }
 );
 

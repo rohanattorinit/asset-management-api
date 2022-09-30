@@ -91,18 +91,29 @@ router.post(
 );
 
 //get all employees
-router.get("/", isAuth, isAdmin, async (_, res: Response) => {
-   db.select("*")
-      .from("employees")
-      .then((data) => {
-         res.status(200).json({
-            message: "All employees fetched successfully",
-            data: data,
-         });
-      })
-      .catch((error) => {
-         res.status(400).json({ error });
+
+router.get("/", isAuth, isAdmin, async (req, res: Response) => {
+  const name = req?.query?.name;
+
+  db.select("*")
+    .from("employees")
+    .modify((queryBuilder) => {
+      if (name) {
+        queryBuilder?.where("name", "like", `%${name}%`);
+      }
+    })
+    .then((data) => {
+      res.status(200).json({
+        message: "All employees fetched successfully",
+        data: data,
       });
+    })
+    .catch((error) => {
+      res
+        .status(400)
+        .json({ error: "Error occured while trying to fetch employees" });
+    });
+
 });
 
 //get a single employee
