@@ -28,7 +28,14 @@ interface Asset {
   description: string;
   status: "allocated" | "available";
   usability: "usable" | "unusable" | "disposed";
+  asset_location: string;
   addedTime: string;
+  isRented?: boolean;
+  vendor?: string;
+  rent?: number;
+  deposit?: number;
+  rentStartDate?: string;
+  rentEndDate?: string;
 }
 
 //get all assets
@@ -119,26 +126,57 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
       description,
       status,
       usability,
+      asset_location,
+      isRented,
+      vendor,
+      rent,
+      deposit,
+      rentStartDate,
+      rentEndDate,
     } = req.body;
-
+    if (isRented) {
+      if (!vendor || !deposit || !rentStartDate || !rentEndDate) {
+        return res
+          .status(400)
+          .json({ error: "Please provide rental details!" });
+      }
+    }
     //find brand Id using the brand name given in request body
     const brandArr = await db("brands")
       .select("brandId")
       .where("name", "=", brandName);
     const brandId = brandArr[0].brandId;
-
-    const asset: Asset = {
-      brandId,
-      name: assetName,
-      assetType,
-      category,
-      modelNo,
-      description,
-      status,
-      usability,
-      addedTime: moment().format("YYYY-MM-DD HH:mm:ss"),
-    };
-
+    const asset: Asset = isRented
+      ? {
+          brandId,
+          name: assetName,
+          assetType,
+          category,
+          modelNo,
+          description,
+          status,
+          usability,
+          addedTime: moment().format("YYYY-MM-DD HH:mm:ss"),
+          asset_location,
+          isRented,
+          vendor,
+          rent,
+          deposit,
+          rentStartDate,
+          rentEndDate,
+        }
+      : {
+          brandId,
+          name: assetName,
+          assetType,
+          category,
+          modelNo,
+          description,
+          status,
+          usability,
+          addedTime: moment().format("YYYY-MM-DD HH:mm:ss"),
+          asset_location,
+        };
     db<Asset>("assets")
       .insert(asset)
       .then(() =>
@@ -147,10 +185,15 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
         })
       )
       .catch((error) =>
-        res.status(400).json({ error: "Error occured while creating asset" })
+        res.status(400).json({
+          error: "Error occured while inserting asset data in db",
+          errorMsg: error,
+        })
       );
   } catch (error) {
-    res.status(400).json({ error });
+    res
+      .status(400)
+      .json({ error: "Error occured while creating asset", errorMsg: error });
   }
 });
 

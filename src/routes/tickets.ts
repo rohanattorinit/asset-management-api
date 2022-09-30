@@ -166,14 +166,18 @@ router.get(
           "ticketstatus.createdAt"
         )
         .then((data) => {
-          console.log(data);
           res.status(200).json({
-            message: `All Tickets fetched successfully for employee`,
+            message: `All updated notes fetched successfully for employee`,
             data,
           });
         });
     } catch (error) {
-      res.status(400).json({ error });
+      res
+        .status(400)
+        .json({
+          error: "Error occured while fetching tickets from db",
+          errorMsg: error,
+        });
     }
   }
 );
