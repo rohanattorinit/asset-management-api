@@ -27,5 +27,5 @@ app.use("/api/assets", assetRoute);
 app.use("/api/tickets", ticketRoute);
 
 app.listen(port, (): void => {
-  console.log(`Server is running here ⚡ : [http://localhost:${port}]`);
+   console.log(`Server is running here ⚡ : [http://localhost:${port}]`);
 });
