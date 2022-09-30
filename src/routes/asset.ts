@@ -41,20 +41,20 @@ interface Asset {
 //get all assets
 router.get("/", isAuth, isAdmin, async (req, res: Response) => {
   const { name, allocate, assetType, isRented } = req?.query;
-
   db<Asset>("assets")
     .select("*")
     .modify((queryBuilder) => {
-      if (allocate) {
+      if (allocate === "true") {
         queryBuilder?.where("status", `available`).where("usability", "usable");
-      } else if (isRented === "0" || isRented === "1") {
+      }
+      if (isRented === "0" || isRented === "1") {
         queryBuilder?.where("isRented", "=", `${isRented}`);
-      } else if (assetType) {
-        queryBuilder?.where("assetType", "=", `${assetType}`);
-      } else if (name) {
-        queryBuilder.where("name", "like", `%${name}%`);
+      }
+      if (assetType === "hardware" || assetType === "software") {
+        queryBuilder?.where("assetType", "=", assetType);
       }
     })
+    .where("name", "like", `%${name}%`)
     .then((data) => {
       res.status(200).json({
         message: "All assets fetched successfully",
@@ -223,7 +223,6 @@ router.post(
           });
 
           Promise.all(assets).then((results) => {
-            console.log("asset resolved", results);
             db<Asset>("assets")
               .insert(results as unknown as Asset)
               .then(() => {
