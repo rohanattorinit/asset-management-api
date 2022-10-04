@@ -1,13 +1,13 @@
 service: asset-management-api
 provider:
   name: aws
-  runtime: nodejs16.16.0
+  runtime: nodejs16.x
   stage: main
   region: ca-central-1
-  memorySize: 128
+
 functions:
-  app:
-    handler: src/index.ts
+  api:
+    handler: dist/index.handler
     events:
       - http:
           path: /
