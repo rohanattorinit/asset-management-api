@@ -1,0 +1,21 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      nodejs: 16
+    commands:
+      - echo "Installing dependencies..."
+  build:
+    commands:
+      - n 16
+      - npm install -g serverless
+      # - cp -r .env.development .env
+      - npm install
+      - npm run build
+      - serverless deploy --stage main
+
+  post_build:
+    commands:
+      - echo "Updating lambda Function..."
+      - echo "Dependancies Installed"
+      - echo "DONE!!"
