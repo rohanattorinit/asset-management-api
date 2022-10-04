@@ -65,27 +65,6 @@ router.get(
     const { assetId } = req.params;
     db<Asset>("assets")
       .select("*")
-      .then((data) => {
-        res.status(200).json({
-          message: "All assets fetched successfully",
-          data: data,
-        });
-      })
-      .catch((error) => {
-        res.status(400).json({ error });
-      });
-  }
-);
-
-//get a single asset
-router.get(
-  "/:assetId",
-  isAuth,
-  isAdmin,
-  async (req: Request, res: Response) => {
-    const { assetId } = req.params;
-    db<Asset>("assets")
-      .select("*")
       .join("brands", "assets.brandId", "=", "brands.brandid")
       .where("assetId", "=", assetId)
       .then((data) => {

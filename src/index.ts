@@ -27,4 +27,5 @@ app.use("/api/brands", brandsRoute);
 app.use("/api/assets", assetRoute);
 app.use("/api/tickets", ticketRoute);
 
-module.exports.handler = serverless(app);
+// module.exports.handler = serverless(app);
+app.listen(4000, () => console.log("Server started"));
