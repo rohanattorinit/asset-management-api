@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
+import serverless from "serverless-http";
 dotenv.config();
 const port = process.env.PORT;
 const app = express();
@@ -26,6 +27,7 @@ app.use("/api/brands", brandsRoute);
 app.use("/api/assets", assetRoute);
 app.use("/api/tickets", ticketRoute);
 
-app.listen(port, (): void => {
-   console.log(`Server is running here ⚡ : [http://localhost:${port}]`);
-});
+// app.listen(port, (): void => {
+//    console.log(`Server is running here ⚡ : [http://localhost:${port}]`);
+// });
+module.exports.handler = serverless(app);
