@@ -69,14 +69,11 @@ router.get("/", isAuth, isAdmin, async (req: Request, res: Response) => {
 
     db<Ticket>("tickets")
       .select("*")
-      .where("title", "like", `%${title}`)
       .modify((queryBuilder) => {
-        if (status) {
+        if (status?.length)
           queryBuilder?.where("ticketStatus", "=", `${status}`);
-        } else if (title) {
-          queryBuilder?.where("title", "like", `%${title}%`);
-        }
       })
+      .where("title", "like", `%${title}%`)
       .then((data) => {
         res.status(200).json({
           message: `All Tickets fetched successfully`,
@@ -172,12 +169,10 @@ router.get(
           });
         });
     } catch (error) {
-      res
-        .status(400)
-        .json({
-          error: "Error occured while fetching tickets from db",
-          errorMsg: error,
-        });
+      res.status(400).json({
+        error: "Error occured while fetching tickets from db",
+        errorMsg: error,
+      });
     }
   }
 );
