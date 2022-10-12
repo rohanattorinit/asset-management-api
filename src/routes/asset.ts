@@ -161,6 +161,7 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
           assetType,
           category,
           modelNo,
+        isRented,
           description,
           status,
           usability,
