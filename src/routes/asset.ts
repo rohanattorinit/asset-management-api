@@ -124,7 +124,6 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
       rentStartDate,
       rentEndDate,
     } = req.body;
-
     if (isRented) {
       if (!vendor || !deposit || !rentStartDate || !rentEndDate) {
         return res
@@ -132,13 +131,11 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
           .json({ error: "Please provide rental details!" });
       }
     }
-
     //find brand Id using the brand name given in request body
     const brandArr = await db("brands")
       .select("brandId")
       .where("name", "=", brandName);
     const brandId = brandArr[0].brandId;
-
     const asset: Asset = isRented
       ? {
           brandId,
@@ -170,20 +167,27 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
           asset_location,
           addedTime: moment().format("YYYY-MM-DD HH:mm:ss"),
         };
-
     db<Asset>("assets")
       .insert(asset)
-      .then(() =>
+      .then(() => {
         res.status(200).json({
           message: "Asset created successfully",
-        })
-      )
-      .catch((error) =>
-        res.status(400).json({
-          error: "Error occured while creating asset",
-          errorMsg: error,
-        })
-      );
+        });
+      })
+      .catch((error) => {
+        //Tocheck Whether it is present in db(dublicate entry)
+        if (error.code === "ER_DUP_ENTRY") {
+          res.status(400).json({
+            error: "Asset Already Exists",
+            errorMsg: error,
+          });
+        } else {
+          res.status(400).json({
+            error: "Error occured while creating asset",
+            errorMsg: error,
+          });
+        }
+      });
   } catch (error) {
     res.status(400).json({ error });
   }
