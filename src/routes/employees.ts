@@ -94,6 +94,7 @@ router.post(
 
 router.get("/", isAuth, isAdmin, async (req, res: Response) => {
   const name = req?.query?.name;
+
   db.select("*")
     .from("employees")
     .modify((queryBuilder) => {
@@ -113,6 +114,7 @@ router.get("/", isAuth, isAdmin, async (req, res: Response) => {
         .json({ error: "Error occured while trying to fetch employees" });
     });
 });
+
 //get a single employee
 router.get("/:id", isAuth, isAdmin, async (req: Request, res: Response) => {
   const { id } = req.params;
