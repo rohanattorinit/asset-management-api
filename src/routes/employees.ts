@@ -2,7 +2,7 @@ import { isAdmin, RequestCustom } from "./../middleware/authorization";
 import bcrypt from "bcrypt";
 import express, { Request, Response } from "express";
 import multer from "multer";
-const upload = multer({ dest: "uploads/" });
+const upload = multer({ dest: "/tmp" });
 const router = express.Router();
 import db from "../config/connection";
 import { isAuth } from "../middleware/authorization";
