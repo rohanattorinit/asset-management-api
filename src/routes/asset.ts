@@ -56,22 +56,26 @@ router.get("/", isAuth, isAdmin, async (req, res: Response) => {
     });
 });
 
-//get a single asset
+//get all details of a single asset
 router.get(
   "/:assetId",
   isAuth,
   isAdmin,
   async (req: Request, res: Response) => {
     const { assetId } = req.params;
-    db<Asset>("assets")
-      .select("*")
+    //join employees and assets from assetallocation table and fetch asset details
+    db.select("assets.assetId","assets.name",'assets.modelNo','assets.description','assets.status','assets.usability','employees.empId','employees.name as empName','brands.name')
+      .from('assetallocation')
+      .join('assets','assets.assetId','=','assetallocation.assetId')
       .join("brands", "assets.brandId", "=", "brands.brandid")
-      .where("assetId", "=", assetId)
+      .join('employees','employees.empId','=','assetallocation.empId')
+      .where("assets.assetId", "=", assetId)
       .then((data) => {
+        console.log("data",data)
         res.status(200).json({
-          message: `Asset ${assetId} fetched successfully`,
+          message: `Asset with assetId:${assetId} fetched successfully`,
           data: data,
-        });
+        })
       })
       .catch((error) => {
         res.status(400).json({ error });
