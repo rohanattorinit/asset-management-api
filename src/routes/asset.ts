@@ -64,12 +64,12 @@ router.get(
   async (req: Request, res: Response) => {
     const { assetId } = req.params;
     //join employees and assets from assetallocation table and fetch asset details
-    db.select('*')
+    db.select('assets.assetId','brands.name as brandName','assets.name','assets.description','assets.modelNo','assets.status','assets.usability',
+    'assets.asset_location','assets.isRented','assets.vendor','assets.rent','assets.deposit','assets.rentStartDate','assets.rentEndDate')
       .from('assets')
-      .join("brands", "assets.brandId", "=", "brands.brandid")
+      .join("brands", "assets.brandId", "=", "brands.brandId")
       .where("assets.assetId", "=", assetId)
       .then((data) => {
-        console.log("data",data)
         res.status(200).json({
           message: `Asset with assetId:${assetId} fetched successfully`,
           data: data[0],
@@ -86,7 +86,8 @@ router.get("/employeeAssets/:empId", isAuth, async (req, res) => {
   const { empId } = req.params;
   db.select(
     "assets.assetId",
-    "brands.name",
+    "assets.name",
+    
     "assets.modelno",
     "assets.category",
     "assetallocation.allocationTime"
