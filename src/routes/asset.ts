@@ -6,7 +6,7 @@ import { isAdmin, isAuth } from "../middleware/authorization";
 import multer from "multer";
 import fs from "fs";
 import csv from "csv-parser";
-const upload = multer({ dest: "uploads/" });
+const upload = multer({ dest: "/tmp" });
 
 interface Asset {
   assetId?: number;
