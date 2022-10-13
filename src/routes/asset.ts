@@ -6,7 +6,7 @@ import { isAdmin, isAuth } from "../middleware/authorization";
 import multer from "multer";
 import fs from "fs";
 import csv from "csv-parser";
-const upload = multer({ dest: "uploads/" });
+const upload = multer({ dest: "/tmp" });
 
 interface Asset {
   assetId?: number;
@@ -124,7 +124,6 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
       rentStartDate,
       rentEndDate,
     } = req.body;
-
     if (isRented) {
       if (!vendor || !deposit || !rentStartDate || !rentEndDate) {
         return res
@@ -132,13 +131,11 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
           .json({ error: "Please provide rental details!" });
       }
     }
-
     //find brand Id using the brand name given in request body
     const brandArr = await db("brands")
       .select("brandId")
       .where("name", "=", brandName);
     const brandId = brandArr[0].brandId;
-
     const asset: Asset = isRented
       ? {
           brandId,
@@ -164,13 +161,13 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
           assetType,
           category,
           modelNo,
+        isRented,
           description,
           status,
           usability,
           asset_location,
           addedTime: moment().format("YYYY-MM-DD HH:mm:ss"),
         };
-
     db<Asset>("assets")
       .insert(asset)
       .then(() => {
