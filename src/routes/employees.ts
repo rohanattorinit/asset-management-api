@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken";
 import { isAdmin, RequestCustom } from "./../middleware/authorization";
 import bcrypt from "bcrypt";
 import express, { Request, Response } from "express";
@@ -159,17 +160,20 @@ router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
     location,
     jobTitle,
   };
+try {
   db<EmployeeType>("employees")
-    .where("empId", id)
-    .update(employee)
-    .then(() => {
-      res.status(200).json({
-        message: "Employee details Updated successfully",
-      });
-    })
-    .catch((error) => {
-      res.status(400).json({ error });
-    });
+  .where("empId", id)
+  .update(employee)
+  .then(() => {
+    res.status(400).json({message:'Profile Updated successfully!'})
+  })
+  .catch((error) => {
+    res.status(400).json({ error:'An error occured while trying to update profile',errorMsg:error})
+  })
+} catch (error) {
+  res.status(400).json({ error:'An error occured while trying to update profile',errorMsg:error})
+}
+ 
 });
 
 //delete an employee

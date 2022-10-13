@@ -74,7 +74,7 @@ router.get(
         console.log("data",data)
         res.status(200).json({
           message: `Asset with assetId:${assetId} fetched successfully`,
-          data: data,
+          data: data[0],
         })
       })
       .catch((error) => {
