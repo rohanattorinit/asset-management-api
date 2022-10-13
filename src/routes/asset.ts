@@ -173,22 +173,31 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
 
     db<Asset>("assets")
       .insert(asset)
-      .then(() =>
+      .then(() => {
         res.status(200).json({
           message: "Asset created successfully",
-        })
-      )
-      .catch((error) =>
-        res.status(400).json({
-          error: "Error occured while creating asset",
-          errorMsg: error,
-        })
-      );
+        });
+      })
+      .catch((error) => {
+        //Tocheck Whether it is present in db(dublicate entry)
+        if (error.code === "ER_DUP_ENTRY") {
+          res.status(400).json({
+            error: "Asset Already Exists",
+            errorMsg: error,
+          });
+        } else {
+          res.status(400).json({
+            error: "Error occured while creating asset",
+            errorMsg: error,
+          });
+        }
+      });
   } catch (error) {
     res.status(400).json({ error });
   }
 });
 
+//add bulk assets
 router.post(
   "/create-bulk",
   isAuth,

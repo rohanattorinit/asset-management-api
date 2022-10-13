@@ -10,16 +10,6 @@ const db = knex({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
   },
-  log: {
-    warn(message) {
-      console.log(message);
-    },
-    error(message) {
-      console.error(message);
-    },
-    deprecate(message) {},
-    debug(message) {},
-  },
 });
 
 export default db;

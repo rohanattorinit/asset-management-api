@@ -29,24 +29,41 @@ interface UpdateEmployee {
 
 //Add a new employee
 router.post("/", isAuth, isAdmin, async (req: Request, res: Response) => {
-  const { empId, name, email, phone, location, jobTitle } = req.body;
-  const hash = await bcrypt.hash(email, 10);
-  const employee: EmployeeType = {
-    empId,
-    name,
-    email,
-    password: hash,
-    phone,
-    location,
-    jobTitle,
-  };
+  try {
+    const { empId, name, email, phone, location, jobTitle } = req.body;
+    const hash = await bcrypt.hash(email, 10);
+    const employee: EmployeeType = {
+      empId,
+      name,
+      email,
+      password: hash,
+      phone,
+      location,
+      jobTitle,
+    };
 
-  db<EmployeeType>("employees")
-    .insert(employee)
-    .then(() => {
-      res.status(200).json({ message: "Employee added Successfully!" });
-    })
-    .catch((error) => res.status(400).json({ error }));
+    db<EmployeeType>("employees")
+      .insert(employee)
+      .then(() => {
+        res.status(200).json({ message: "Employee added Successfully!" });
+      })
+      .catch((error) => {
+        //Tocheck Whether it is present in db(dublicate entry)
+        if (error.code === "ER_DUP_ENTRY") {
+          res.status(400).json({
+            error: "Employee Already Exists",
+            errorMsg: error,
+          });
+        } else {
+          res.status(400).json({
+            error: "Error occured while creating asset",
+            errorMsg: error,
+          });
+        }
+      });
+  } catch (error) {
+    res.status(400).json({ error });
+  }
 });
 
 //Create bulk employees
