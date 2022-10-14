@@ -6,6 +6,7 @@ import { isAdmin, isAuth } from "../middleware/authorization";
 import multer from "multer";
 import fs from "fs";
 import csv from "csv-parser";
+import { nextTick } from "process";
 const upload = multer({ dest: "/tmp" });
 
 interface Asset {
@@ -34,6 +35,7 @@ interface UpdateAssetType{
   description?: string;
   status?: "available"|"allocated";
   usability?: "usable"|"unusable"|"disposed";
+  asset_location:string;
   isRented: boolean;
   vendor?: string;
   rent?: number;
@@ -265,6 +267,7 @@ router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
     rent,
     deposit,
     rentStartDate,
+    asset_location,
     rentEndDate } = req.body;
   const { id } = req.params;
 
@@ -277,6 +280,7 @@ router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
     isRented,
     vendor,
     rent,
+    asset_location,
     deposit,
     rentStartDate,
     rentEndDate
