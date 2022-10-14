@@ -160,7 +160,7 @@ router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
     location,
     jobTitle,
   };
-try {
+
   db<EmployeeType>("employees")
   .where("empId", id)
   .update(employee)
@@ -170,10 +170,6 @@ try {
   .catch((error) => {
     res.status(400).json({ error:'An error occured while trying to update profile',errorMsg:error})
   })
-} catch (error) {
-  res.status(400).json({ error:'An error occured while trying to update profile',errorMsg:error})
-}
- 
 });
 
 //delete an employee
