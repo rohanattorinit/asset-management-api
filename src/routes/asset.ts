@@ -14,13 +14,27 @@ interface Asset {
   name: string;
   assetType: "software" | "hardware";
   category: string;
-  modelNo: number;
+  modelNo: string;
   description: string;
   status: "allocated" | "available";
   usability: "usable" | "unusable" | "disposed";
   asset_location: string;
   addedTime: string;
   isRented?: boolean;
+  vendor?: string;
+  rent?: number;
+  deposit?: number;
+  rentStartDate?: string;
+  rentEndDate?: string;
+}
+
+interface UpdateAssetType{
+  name?: string;
+  modelNo?: string;
+  description?: string;
+  status?: "available"|"allocated";
+  usability?: "usable"|"unusable"|"disposed";
+  isRented: boolean;
   vendor?: string;
   rent?: number;
   deposit?: number;
@@ -164,7 +178,7 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
           assetType,
           category,
           modelNo,
-        isRented,
+          isRented,
           description,
           status,
           usability,
@@ -236,4 +250,55 @@ router.post(
     }
   }
 );
+
+//update assets
+router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
+  const { 
+    name,
+    modelNo,
+    description,
+    status,
+    usability,
+    brandName,
+    isRented,
+    vendor,
+    rent,
+    deposit,
+    rentStartDate,
+    rentEndDate } = req.body;
+  const { id } = req.params;
+
+  const asset: UpdateAssetType={
+    name,
+    modelNo,
+    description,
+    status,
+    usability,
+    isRented,
+    vendor,
+    rent,
+    deposit,
+    rentStartDate,
+    rentEndDate
+  }
+try {
+  db<Asset>("assets")
+  .where("assetId", id)
+  .update(asset)
+  .then(() => {
+    if(brandName){
+      db("brands")
+      .where("name",brandName)
+      .update({name: brandName})
+      .catch(err=>res.status(400).json({ error:'Error occured while updating Brand Name of the asset',errorMsg:err}))
+    }
+    res.status(200).json({message:'Asset Updated successfully!'})
+  })
+  .catch((error) => {
+    res.status(400).json({ error:'An error occured while trying to edit the asset',errorMsg:error})
+  })
+} catch (error) {
+  res.status(400).json({ error:'An error occured while trying to edit the asset',errorMsg:error})
+}});
+
 export default router;
