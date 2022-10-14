@@ -165,7 +165,7 @@ router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
   .where("empId", id)
   .update(employee)
   .then(() => {
-    res.status(400).json({message:'Profile Updated successfully!'})
+    res.status(200).json({message:'Profile Updated successfully!'})
   })
   .catch((error) => {
     res.status(400).json({ error:'An error occured while trying to update profile',errorMsg:error})
