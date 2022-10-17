@@ -6,13 +6,13 @@ import { isAdmin, isAuth } from "../middleware/authorization";
 import multer from "multer";
 import fs from "fs";
 import csv from "csv-parser";
-const upload = multer({ dest: "uploads/" });
+const upload = multer({ dest: "/tmp" });
 
 interface Asset {
   assetId?: number;
   brandId: number;
   name: string;
-  assetType: string;
+  assetType: "software" | "hardware";
   category: string;
   modelNo: number;
   description: string;
@@ -56,43 +56,24 @@ router.get("/", isAuth, isAdmin, async (req, res: Response) => {
     });
 });
 
-//get a single asset
+//get all details of a single asset
 router.get(
   "/:assetId",
   isAuth,
   isAdmin,
   async (req: Request, res: Response) => {
     const { assetId } = req.params;
-    db<Asset>("assets")
-      .select("*")
+    //join employees and assets from assetallocation table and fetch asset details
+    db.select('assets.assetId','brands.name as brandName','assets.name','assets.description','assets.modelNo','assets.status','assets.usability',
+    'assets.asset_location','assets.isRented','assets.vendor','assets.rent','assets.deposit','assets.rentStartDate','assets.rentEndDate')
+      .from('assets')
+      .join("brands", "assets.brandId", "=", "brands.brandId")
+      .where("assets.assetId", "=", assetId)
       .then((data) => {
         res.status(200).json({
-          message: "All assets fetched successfully",
-          data: data,
-        });
-      })
-      .catch((error) => {
-        res.status(400).json({ error });
-      });
-  }
-);
-
-//get a single asset
-router.get(
-  "/:assetId",
-  isAuth,
-  isAdmin,
-  async (req: Request, res: Response) => {
-    const { assetId } = req.params;
-    db<Asset>("assets")
-      .select("*")
-      .join("brands", "assets.brandId", "=", "brands.brandid")
-      .where("assetId", "=", assetId)
-      .then((data) => {
-        res.status(200).json({
-          message: `Asset ${assetId} fetched successfully`,
-          data: data,
-        });
+          message: `Asset with assetId:${assetId} fetched successfully`,
+          data: data[0],
+        })
       })
       .catch((error) => {
         res.status(400).json({ error });
@@ -105,7 +86,8 @@ router.get("/employeeAssets/:empId", isAuth, async (req, res) => {
   const { empId } = req.params;
   db.select(
     "assets.assetId",
-    "brands.name",
+    "assets.name",
+    
     "assets.modelno",
     "assets.category",
     "assetallocation.allocationTime"
@@ -137,15 +119,14 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
       description,
       status,
       usability,
-      asset_location,
       isRented,
+      asset_location,
       vendor,
       rent,
       deposit,
       rentStartDate,
       rentEndDate,
     } = req.body;
-
     if (isRented) {
       if (!vendor || !deposit || !rentStartDate || !rentEndDate) {
         return res
@@ -153,13 +134,11 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
           .json({ error: "Please provide rental details!" });
       }
     }
-
     //find brand Id using the brand name given in request body
     const brandArr = await db("brands")
       .select("brandId")
       .where("name", "=", brandName);
     const brandId = brandArr[0].brandId;
-
     const asset: Asset = isRented
       ? {
           brandId,
@@ -185,31 +164,40 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
           assetType,
           category,
           modelNo,
-          asset_location,
+        isRented,
           description,
           status,
           usability,
+          asset_location,
           addedTime: moment().format("YYYY-MM-DD HH:mm:ss"),
         };
-
     db<Asset>("assets")
       .insert(asset)
-      .then(() =>
+      .then(() => {
         res.status(200).json({
           message: "Asset created successfully",
-        })
-      )
-      .catch((error) =>
-        res.status(400).json({
-          error: "Error occured while creating asset",
-          errorMsg: error,
-        })
-      );
+        });
+      })
+      .catch((error) => {
+        //Tocheck Whether it is present in db(dublicate entry)
+        if (error.code === "ER_DUP_ENTRY") {
+          res.status(400).json({
+            error: "Asset Already Exists",
+            errorMsg: error,
+          });
+        } else {
+          res.status(400).json({
+            error: "Error occured while creating asset",
+            errorMsg: error,
+          });
+        }
+      });
   } catch (error) {
     res.status(400).json({ error });
   }
 });
 
+//add bulk assets
 router.post(
   "/create-bulk",
   isAuth,
@@ -230,16 +218,16 @@ router.post(
                 delete result["brandName"];
                 result.brandId = data[0].brandId;
                 result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
+
                 return result;
               });
           });
+
           Promise.all(assets).then((results) => {
             db<Asset>("assets")
               .insert(results as unknown as Asset)
               .then(() => {
-                res.status(200).json({
-                  message: "Assets added Successfully!",
-                });
+                res.status(200).json({ message: "Assets added Successfully!" });
               });
           });
         });

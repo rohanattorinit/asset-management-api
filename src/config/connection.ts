@@ -1,5 +1,6 @@
 import { knex } from "knex";
 const dbPort = process.env.DB_PORT;
+
 const db = knex({
   client: "mysql2",
   connection: {

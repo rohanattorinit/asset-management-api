@@ -1,0 +1,19 @@
+service: asset-management-api
+provider:
+  name: aws
+  runtime: nodejs16.x
+  stage: main
+  region: ca-central-1
+
+functions:
+  api:
+    handler: dist/index.handler
+    events:
+      - http:
+          path: /
+          method: ANY
+          cors: true
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true

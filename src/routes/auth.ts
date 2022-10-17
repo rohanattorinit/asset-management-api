@@ -59,7 +59,10 @@ router.post("/", async (req: Request, res: Response) => {
         } else {
           res.status(400).json({ error: "Wrong credentials!" });
         }
-      });
+      })
+      .catch((error) =>
+        res.status(400).json({ error: "Employee does not exist" })
+      );
   } catch (error) {
     res.status(400).json({ error: "Error occured while logging in" });
   }

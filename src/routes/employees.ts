@@ -1,8 +1,9 @@
+import jwt from "jsonwebtoken";
 import { isAdmin, RequestCustom } from "./../middleware/authorization";
 import bcrypt from "bcrypt";
 import express, { Request, Response } from "express";
 import multer from "multer";
-const upload = multer({ dest: "uploads/" });
+const upload = multer({ dest: "/tmp" });
 const router = express.Router();
 import db from "../config/connection";
 import { isAuth } from "../middleware/authorization";
@@ -29,24 +30,41 @@ interface UpdateEmployee {
 
 //Add a new employee
 router.post("/", isAuth, isAdmin, async (req: Request, res: Response) => {
-  const { empId, name, email, phone, location, jobTitle } = req.body;
-  const hash = await bcrypt.hash(email, 10);
-  const employee: EmployeeType = {
-    empId,
-    name,
-    email,
-    password: hash,
-    phone,
-    location,
-    jobTitle,
-  };
+  try {
+    const { empId, name, email, phone, location, jobTitle } = req.body;
+    const hash = await bcrypt.hash(email, 10);
+    const employee: EmployeeType = {
+      empId,
+      name,
+      email,
+      password: hash,
+      phone,
+      location,
+      jobTitle,
+    };
 
-  db<EmployeeType>("employees")
-    .insert(employee)
-    .then(() => {
-      res.status(200).json({ message: "Employee added Successfully!" });
-    })
-    .catch((error) => res.status(400).json({ error }));
+    db<EmployeeType>("employees")
+      .insert(employee)
+      .then(() => {
+        res.status(200).json({ message: "Employee added Successfully!" });
+      })
+      .catch((error) => {
+        //Tocheck Whether it is present in db(dublicate entry)
+        if (error.code === "ER_DUP_ENTRY") {
+          res.status(400).json({
+            error: "Employee Already Exists",
+            errorMsg: error,
+          });
+        } else {
+          res.status(400).json({
+            error: "Error occured while creating asset",
+            errorMsg: error,
+          });
+        }
+      });
+  } catch (error) {
+    res.status(400).json({ error });
+  }
 });
 
 //Create bulk employees
@@ -142,17 +160,16 @@ router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
     location,
     jobTitle,
   };
+
   db<EmployeeType>("employees")
-    .where("empId", id)
-    .update(employee)
-    .then(() => {
-      res.status(200).json({
-        message: "Employee details Updated successfully",
-      });
-    })
-    .catch((error) => {
-      res.status(400).json({ error });
-    });
+  .where("empId", id)
+  .update(employee)
+  .then(() => {
+    res.status(200).json({message:'Profile Updated successfully!'})
+  })
+  .catch((error) => {
+    res.status(400).json({ error:'An error occured while trying to update profile',errorMsg:error})
+  })
 });
 
 //delete an employee

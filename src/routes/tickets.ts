@@ -66,7 +66,6 @@ router.get(
 router.get("/", isAuth, isAdmin, async (req: Request, res: Response) => {
   try {
     const { title, status } = req.query;
-
     db<Ticket>("tickets")
       .select("*")
       .modify((queryBuilder) => {
