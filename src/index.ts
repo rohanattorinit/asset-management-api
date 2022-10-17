@@ -21,21 +21,21 @@ app.use("/api/employees", employeeRoute);
 app.use("/api/brands", brandsRoute);
 app.use("/api/assets", assetRoute);
 app.use("/api/tickets", ticketRoute);
-//module.exports.handler = serverless(app);
-const server = app.listen(4000, () => console.log("Server started"));
-const io = socketIo(server, { cors: { origin: "*" } });
-let interval: any;
-io.on("connection", (socket: any) => {
-  console.log("New client connected");
-  if (interval) {
-    clearInterval(interval);
-  }
-  interval = setInterval(() => getApiAndEmit(socket), 1000);
-  socket.on("disconnect", () => {
-    console.log("Client disconnected");
-    clearInterval(interval);
-  });
-});
+module.exports.handler = serverless(app);
+//const server = app.listen(4000, () => console.log("Server started"));
+// const io = socketIo(server, { cors: { origin: "*" } });
+// let interval: any;
+// io.on("connection", (socket: any) => {
+//   console.log("New client connected");
+//   if (interval) {
+//     clearInterval(interval);
+//   }
+//   interval = setInterval(() => getApiAndEmit(socket), 1000);
+//   socket.on("disconnect", () => {
+//     console.log("Client disconnected");
+//     clearInterval(interval);
+//   });
+// });
 
 const getApiAndEmit = (socket: any) => {
   const response = "Yo! this is a response";
