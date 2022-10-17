@@ -37,8 +37,8 @@ module.exports.handler = serverless(app);
 //   });
 // });
 
-const getApiAndEmit = (socket: any) => {
-  const response = "Yo! this is a response";
-  // Emitting a new message. Will be consumed by the client
-  socket.emit("FromAPI", response);
-};
+// const getApiAndEmit = (socket: any) => {
+//   const response = "Yo! this is a response";
+//   // Emitting a new message. Will be consumed by the client
+//   socket.emit("FromAPI", response);
+// };
