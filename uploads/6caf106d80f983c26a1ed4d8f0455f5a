@@ -1,0 +1,3 @@
+brandName,name,assetType,category,modelNo,description,status,usability,asset_location,isRented,vendor,rent,deposit,rentEndDate,rentStartDate
+Linux,MacBook Pro ki,Software,OS,HGF7656,drdfcvgv,available,usable,Pune,1,startup,585,120,2022-09-29,2022-09-01
+Apple,Windows 11 ki,Software,OS,HGF7657,vgnvgc,available,usable,Mumbai,0,Getway,10000,1542,2022-09-29,2022-09-01
