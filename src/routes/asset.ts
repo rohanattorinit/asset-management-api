@@ -81,9 +81,11 @@ router.get(
     const { assetId } = req.params;
     //join employees and assets from assetallocation table and fetch asset details
     db.select('assets.assetId','brands.name as brandName','assets.name','assets.description','assets.modelNo','assets.status','assets.usability',
-    'assets.asset_location','assets.isRented','assets.vendor','assets.rent','assets.deposit','assets.rentStartDate','assets.rentEndDate')
+    'employees.empId','employees.name as empName','assets.asset_location','assets.isRented','assets.vendor','assets.rent','assets.deposit','assets.rentStartDate','assets.rentEndDate')
       .from('assets')
       .join("brands", "assets.brandId", "=", "brands.brandId")
+      .join('assetallocation','assetallocation.assetId','assets.assetId')
+      .join('employees','assetallocation.empId','employees.empId')
       .where("assets.assetId", "=", assetId)
       .then((data) => {
         res.status(200).json({
