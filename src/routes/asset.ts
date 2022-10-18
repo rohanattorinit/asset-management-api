@@ -6,7 +6,6 @@ import { isAdmin, isAuth } from '../middleware/authorization'
 import multer from 'multer'
 import fs from 'fs'
 import csv from 'csv-parser'
-import { nextTick } from 'process'
 const upload = multer({ dest: '/tmp' })
 
 interface Asset {
@@ -30,7 +29,7 @@ interface Asset {
 }
 
 interface UpdateAssetType {
-  name?: string
+  assetName?: string
   modelNo?: string
   description?: string
   status?: 'available' | 'allocated'
@@ -310,7 +309,7 @@ router.post(
 //update assets
 router.post('/update/:id', isAuth, async (req: Request, res: Response) => {
   const {
-    name,
+    assetName,
     modelNo,
     description,
     status,
@@ -327,7 +326,7 @@ router.post('/update/:id', isAuth, async (req: Request, res: Response) => {
   const { id } = req.params
 
   const asset: UpdateAssetType = {
-    name,
+    assetName,
     modelNo,
     description,
     status,
