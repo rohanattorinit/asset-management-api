@@ -29,7 +29,7 @@ interface Asset {
 }
 
 interface UpdateAssetType {
-  assetName?: string
+  name?: string
   modelNo?: string
   description?: string
   status?: 'available' | 'allocated'
@@ -326,7 +326,7 @@ router.post('/update/:id', isAuth, async (req: Request, res: Response) => {
   const { id } = req.params
 
   const asset: UpdateAssetType = {
-    assetName,
+    name: assetName,
     modelNo,
     description,
     status,
@@ -346,8 +346,15 @@ router.post('/update/:id', isAuth, async (req: Request, res: Response) => {
       .then(() => {
         if (brandName) {
           db('brands')
-            .where('name', brandName)
-            .update({ name: brandName })
+          .select('brandId')
+          .where('name',brandName)
+          .first()
+          .then(data=>{
+            console.log(data)
+            db<Asset>('assets')
+            .where('assetId', id)
+            .update({brandId:data.brandId})
+          })
             .catch(err =>
               res.status(400).json({
                 error: 'Error occured while updating Brand Name of the asset',
