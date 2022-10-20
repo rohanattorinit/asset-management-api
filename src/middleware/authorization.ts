@@ -49,7 +49,11 @@ export const isAuth = async (
   }
   try {
     const user = jwt.verify(token, process.env.SECRET_KEY!);
-    req.user = (user as any).empId;
+    if (user) {
+      return next();
+    } else {
+      req.user = (user as any).empId;
+    }
   } catch (error) {
     return res.status(401).json({ message: "Invalid token" });
   }
