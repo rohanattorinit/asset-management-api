@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 import db from "../config/connection";
+
 export interface RequestCustom extends Request {
   user?: string;
 }
@@ -11,6 +12,7 @@ export const isAdmin = async (
   next: NextFunction
 ) => {
   try {
+    
     const checkIsAdmin = (res: Response) => {
       const promise = new Promise((resolve, reject) => {
         db.select("*")
@@ -43,15 +45,25 @@ export const isAuth = async (
   res: Response,
   next: NextFunction
 ) => {
-  const token = req.headers.authorization?.split("Bearer ")[1];
+  //@ts-ignore
+  const token = req.headers?.authorization?.split("Bearer ")[1];
+  
   if (!token) {
     return res.status(403).json({ message: "Token is missing" });
   }
   try {
-    const user = jwt.verify(token, process.env.SECRET_KEY!);
-    req.user = (user as any).empId;
+   jwt.verify(token, process.env.SECRET_KEY!,(err:any, decoded:any)=>{
+    if(err?.name==='TokenExpiredError'){
+      req.user=undefined
+      return res.status(403).json({ message: "Token is expired! Try logging in again" });
+    } 
+    if(decoded){
+      //@ts-ignore
+      req.user = decoded?.empId;
+      return next();
+    }
+    });
   } catch (error) {
     return res.status(401).json({ message: "Invalid token" });
   }
-  return next();
 };

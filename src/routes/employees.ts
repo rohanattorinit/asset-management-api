@@ -129,7 +129,7 @@ router.get("/", isAuth, isAdmin, async (req, res: Response) => {
     .catch((error) => {
       res
         .status(400)
-        .json({ error: "Error occured while trying to fetch employees" });
+        .json({ error: "Error occured while trying to fetch employees",errorMsg:error});
     });
 });
 
