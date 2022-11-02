@@ -77,112 +77,112 @@ router.get("/", isAuth, isAdmin, async (req, res: Response) => {
     });
 });
 
-// //get all details of a single asset
-// router.get(
-//   "/:assetId",
-//   isAuth,
-//   isAdmin,
-//   async (req: Request, res: Response) => {
-//     const { assetId } = req.params;
-//     if (!assetId) res.status(400).json({ error: "Asset Id is missing!" });
-//     db.select(
-//       "assets.assetId",
-//       "brands.name as brandName",
-//       "assets.name",
-//       "assets.description",
-//       "assets.modelNo",
-//       "assets.status",
-//       "assets.usability",
-//       "assets.asset_location",
-//       "assets.isRented",
-//       "assets.vendor",
-//       "assets.rent",
-//       "assets.deposit",
-//       "assets.rentStartDate",
-//       "assets.rentEndDate"
-//     )
-//       .from("assets")
-//       .join("brands", "assets.brandId", "=", "brands.brandId")
-//       .where("assets.assetId", "=", assetId)
-//       .first()
-//       .then(async (data) => {
-//         if (data.status === "allocated") {
-//           db.select(
-//             "assets.assetId",
-//             "brands.name as brandName",
-//             "assets.name",
-//             "assets.description",
-//             "assets.modelNo",
-//             "assets.status",
-//             "assets.usability",
-//             "employees.empId",
-//             "employees.name as empName",
-//             "assets.asset_location",
-//             "assets.isRented",
-//             "assets.vendor",
-//             "assets.rent",
-//             "assets.deposit",
-//             "assets.rentStartDate",
-//             "assets.rentEndDate"
-//           )
-//             .from("assets")
-//             .join("brands", "assets.brandId", "=", "brands.brandId")
-//             .join(
-//               "assetallocation",
-//               "assetallocation.assetId",
-//               "assets.assetId"
-//             )
-//             .join("employees", "assetallocation.empId", "employees.empId")
-//             .where("assets.assetId", "=", assetId)
-//             .first()
-//             .then((data) => {
-//               res.status(200).json({ data: data });
-//             })
-//             .catch((error) =>
-//               res.status(400).json({
-//                 error: "Error occured while fetching asset details",
-//                 errorMsg: error,
-//               })
-//             );
-//         } else {
-//           res.status(200).json({
-//             message: `Asset with assetId:${assetId} fetched successfully`,
-//             data: data,
-//           });
-//         }
-//       })
-//       .catch((error) => {
-//         res
-//           .status(400)
-//           .json({ error: "Error occured while fetching asset details" });
-//       });
-//   }
-// );
+//get all details of a single asset
+router.get(
+  "/:assetId",
+  isAuth,
+  isAdmin,
+  async (req: Request, res: Response) => {
+    const { assetId } = req.params;
+    if (!assetId) res.status(400).json({ error: "Asset Id is missing!" });
+    db.select(
+      "assets.assetId",
+      "brands.name as brandName",
+      "assets.name",
+      "assets.description",
+      "assets.modelNo",
+      "assets.status",
+      //"assets.usability",
+      "assets.asset_location",
+      "assets.isRented",
+      "assets.vendor",
+      "assets.rent",
+      "assets.deposit",
+      "assets.rentStartDate",
+      "assets.rentEndDate"
+    )
+      .from("assets")
+      .join("brands", "assets.brandId", "=", "brands.brandId")
+      .where("assets.assetId", "=", assetId)
+      .first()
+      .then(async (data) => {
+        if (data.status === "allocated") {
+          db.select(
+            "assets.assetId",
+            "brands.name as brandName",
+            "assets.name",
+            "assets.description",
+            "assets.modelNo",
+            "assets.status",
+            //"assets.usability",
+            "employees.empId",
+            "employees.name as empName",
+            "assets.asset_location",
+            "assets.isRented",
+            "assets.vendor",
+            "assets.rent",
+            "assets.deposit",
+            "assets.rentStartDate",
+            "assets.rentEndDate"
+          )
+            .from("assets")
+            .join("brands", "assets.brandId", "=", "brands.brandId")
+            .join(
+              "assetallocation",
+              "assetallocation.assetId",
+              "assets.assetId"
+            )
+            .join("employees", "assetallocation.empId", "employees.empId")
+            .where("assets.assetId", "=", assetId)
+            .first()
+            .then((data) => {
+              res.status(200).json({ data: data });
+            })
+            .catch((error) =>
+              res.status(400).json({
+                error: "Error occured while fetching asset details",
+                errorMsg: error,
+              })
+            );
+        } else {
+          res.status(200).json({
+            message: `Asset with assetId:${assetId} fetched successfully`,
+            data: data,
+          });
+        }
+      })
+      .catch((error) => {
+        res
+          .status(400)
+          .json({ error: "Error occured while fetching asset details" });
+      });
+  }
+);
 
-// //get all assets of a single employee
-// router.get("/employeeAssets/:empId", isAuth, async (req, res) => {
-//   const { empId } = req.params;
-//   db.select(
-//     "assets.assetId",
-//     "assets.name",
-//     "assets.modelno",
-//     "assets.category",
-//     "assetallocation.allocationTime"
-//   )
-//     .from("assetallocation")
-//     .join("assets", "assetallocation.assetId", "=", "assets.assetId")
-//     .join("brands", "assets.brandId", "=", "brands.brandid")
-//     .where("assetallocation.empId", empId)
-//     .then((data) => {
-//       res.status(200).json({
-//         message: `All assets fetched for employee: ${empId} successfully`,
-//         data: data,
-//       });
-//     })
-//     .catch((error) => {
-//       res.status(400).json({ error });
-//     });
-// });
+//get all assets of a single employee
+router.get("/employeeAssets/:empId", isAuth, async (req, res) => {
+  const { empId } = req.params;
+  db.select(
+    "assets.assetId",
+    "assets.name",
+    "assets.modelno",
+    "assets.category",
+    "assetallocation.allocationTime"
+  )
+    .from("assetallocation")
+    .join("assets", "assetallocation.assetId", "=", "assets.assetId")
+    .join("brands", "assets.brandId", "=", "brands.brandid")
+    .where("assetallocation.empId", empId)
+    .then((data) => {
+      res.status(200).json({
+        message: `All assets fetched for employee: ${empId} successfully`,
+        data: data,
+      });
+    })
+    .catch((error) => {
+      res.status(400).json({ error });
+    });
+});
 
 //create a new asset
 router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
@@ -290,45 +290,45 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
   }
 });
 
-// //add bulk assets
-// router.post(
-//   "/create-bulk",
-//   isAuth,
-//   isAdmin,
-//   upload.single("csvFile"),
-//   async (req: Request, res: Response) => {
-//     try {
-//       const results: Asset[] = [];
-//       fs.createReadStream(req.file?.path!)
-//         .pipe(csv())
-//         .on("data", (data: Asset) => results.push(data))
-//         .on("end", async () => {
-//           const assets = results.map(async (result: any) => {
-//             return await db("brands")
-//               .select("brandId")
-//               .where("name", "=", result.brandName)
-//               .then((data) => {
-//                 delete result["brandName"];
-//                 result.brandId = data[0].brandId;
-//                 result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
+//add bulk assets
+router.post(
+  "/create-bulk",
+  isAuth,
+  isAdmin,
+  upload.single("csvFile"),
+  async (req: Request, res: Response) => {
+    try {
+      const results: Asset[] = [];
+      fs.createReadStream(req.file?.path!)
+        .pipe(csv())
+        .on("data", (data: Asset) => results.push(data))
+        .on("end", async () => {
+          const assets = results.map(async (result: any) => {
+            return await db("brands")
+              .select("brandId")
+              .where("name", "=", result.brandName)
+              .then((data) => {
+                delete result["brandName"];
+                result.brandId = data[0].brandId;
+                result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
 
-//                 return result;
-//               });
-//           });
+                return result;
+              });
+          });
 
-//           Promise.all(assets).then((results) => {
-//             db<Asset>("assets")
-//               .insert(results as unknown as Asset)
-//               .then(() => {
-//                 res.status(200).json({ message: "Assets added Successfully!" });
-//               });
-//           });
-//         });
-//     } catch (error) {
-//       res.status(400).json({ error: "Error while creating adding assets" });
-//     }
-//   }
-// );
+          Promise.all(assets).then((results) => {
+            db<Asset>("assets")
+              .insert(results as unknown as Asset)
+              .then(() => {
+                res.status(200).json({ message: "Assets added Successfully!" });
+              });
+          });
+        });
+    } catch (error) {
+      res.status(400).json({ error: "Error while creating adding assets" });
+    }
+  }
+);
 
 // //update assets
 // router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
