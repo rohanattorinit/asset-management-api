@@ -59,7 +59,7 @@ interface Filters{
 //get all assets
 router.get("/",  async (req, res: Response) => {
   const {name} = req?.query;
- const {screen_type,ram,allocate, assetType, isRented,category,operating_system,processor}=req.body;
+ const {screen_type,ram,allocate, assetType, isRented,category,operating_system,processor,screen_size,asset_location}=req.body;
   db<Asset>("assets")
     .select("*")
     .modify((queryBuilder) => {
@@ -79,18 +79,55 @@ router.get("/",  async (req, res: Response) => {
         }
         )
       }
-      if (operating_system && operating_system !=="undefined") {
-        console.log("data=>",operating_system)
-        queryBuilder?.where("operating_system", "=", operating_system);
+
+      if (operating_system?.length>0) {
+        queryBuilder?.where(function(){
+          //@ts-ignore
+          operating_system?.map(os=>this.orWhere('operating_system',os))
+        }
+        )
       }
-      if (category && category !=="undefined") {
-        //console.log("data=>",category)
-        queryBuilder?.where("catergory", "=", category);
+
+      if (category?.length>0) {
+        queryBuilder?.where(function(){
+          //@ts-ignore
+          category?.map(categoryoptions=>this.orWhere('category',categoryoptions))
+        }
+        )
       }
-      if (processor && processor !=="undefined") {
-        
-        queryBuilder?.where("processor", "=", processor);
+
+      if (processor?.length>0) {
+        queryBuilder?.where(function(){
+          //@ts-ignore
+          processor?.map(processoroptions=>this.orWhere('processor',processoroptions))
+        }
+        )
       }
+      
+      if (ram?.length>0) {
+        queryBuilder?.where(function(){
+          //@ts-ignore
+          ram?.map(ramoptions=>this.orWhere('ram',ramoptions))
+        }
+        )
+      }
+      
+      if (screen_size?.length>0) {
+        queryBuilder?.where(function(){
+          //@ts-ignore
+          screen_size?.map(size=>this.orWhere('screen_size',size))
+        }
+        )
+      }
+
+      if (asset_location?.length>0) {
+        queryBuilder?.where(function(){
+          //@ts-ignore
+          asset_location?.map(assetlocation=>this.orWhere('asset_location',assetlocation))
+        }
+        )
+      }
+      
     })
     .where("name", "like", `%${name}%`)
     .then((data) => {
