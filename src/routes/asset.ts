@@ -6,6 +6,7 @@ import { isAdmin, isAuth } from "../middleware/authorization";
 import multer from "multer";
 import fs from "fs";
 import csv from "csv-parser";
+import knex from "knex";
 const upload = multer({ dest: "/tmp" });
 
 interface Asset {
@@ -56,9 +57,9 @@ interface Filters{
 }
 
 //get all assets
-router.get("/", isAuth, isAdmin, async (req, res: Response) => {
-  const { name, allocate, assetType, isRented,category,operating_system,processor } = req?.query;
- const {screen_type}=req.body;
+router.get("/",  async (req, res: Response) => {
+  const {name} = req?.query;
+ const {screen_type,ram,allocate, assetType, isRented,category,operating_system,processor}=req.body;
   db<Asset>("assets")
     .select("*")
     .modify((queryBuilder) => {
@@ -71,9 +72,12 @@ router.get("/", isAuth, isAdmin, async (req, res: Response) => {
       if (assetType === "hardware" || assetType === "software") {
         queryBuilder?.where("assetType", "=", assetType);
       }
-      if (screen_type && screen_type !=="undefined") {
-        
-        queryBuilder?.where("screen_type", "=", screen_type);
+      if (screen_type?.length>0) {
+        queryBuilder?.where(function(){
+          //@ts-ignore
+          screen_type?.map(screen=>this.orWhere('screen_type',screen))
+        }
+        )
       }
       if (operating_system && operating_system !=="undefined") {
         console.log("data=>",operating_system)
@@ -209,7 +213,7 @@ router.get("/employeeAssets/:empId", isAuth, async (req, res) => {
 });
 
 //create a new asset
-router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
+router.post("/addAsset",  async (req, res) => {
   try {
     const {
       assetName,
