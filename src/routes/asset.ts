@@ -13,7 +13,7 @@ interface Asset {
   brandId: number;
   name: string;
   assetType: "software" | "hardware";
-  category: "laptop" | "mouse" | "hdmi cable" | "mobile" | "monitor" | "keyboard" | "headset";
+  category: "laptop" | "mouse" | "hdmi cable" | "mobile" | "monitor" | "keyboard" | "headset" | "other";
   modelNo: string;
   description: string;
   status: "allocated" | "surplus" | "broken" | "repairable";
@@ -49,9 +49,16 @@ interface Asset {
 //   rentEndDate?: string;
 // }
 
+interface Filters{
+  fieldId? : number;
+  fields : string;
+  filter_name : string;
+}
+
 //get all assets
 router.get("/", isAuth, isAdmin, async (req, res: Response) => {
-  const { name, allocate, assetType, isRented } = req?.query;
+  const { name, allocate, assetType, isRented,category,operating_system,processor } = req?.query;
+ const {screen_type}=req.body;
   db<Asset>("assets")
     .select("*")
     .modify((queryBuilder) => {
@@ -64,22 +71,39 @@ router.get("/", isAuth, isAdmin, async (req, res: Response) => {
       if (assetType === "hardware" || assetType === "software") {
         queryBuilder?.where("assetType", "=", assetType);
       }
+      if (screen_type && screen_type !=="undefined") {
+        
+        queryBuilder?.where("screen_type", "=", screen_type);
+      }
+      if (operating_system && operating_system !=="undefined") {
+        console.log("data=>",operating_system)
+        queryBuilder?.where("operating_system", "=", operating_system);
+      }
+      if (category && category !=="undefined") {
+        //console.log("data=>",category)
+        queryBuilder?.where("catergory", "=", category);
+      }
+      if (processor && processor !=="undefined") {
+        
+        queryBuilder?.where("processor", "=", processor);
+      }
     })
     .where("name", "like", `%${name}%`)
     .then((data) => {
+      console.log(data)
       res.status(200).json({
         message: "All assets fetched successfully",
         data: data,
       });
     })
     .catch((error) => {
-      res.status(400).json({ error: "Error occured while fetching assets!" });
+      res.status(400).json({ error: "Error occured while fetching assets!",errorMsg:error });
     });
 });
 
 //get all details of a single asset
 router.get(
-  "/:assetId",
+  "/singleAsset/:assetId",
   isAuth,
   isAdmin,
   async (req: Request, res: Response) => {
@@ -407,5 +431,29 @@ router.post(
 //     });
 //   }
 // });
+
+
+router.get("/filterOptions",async (_,res:Response) => {
+  // console.log("sadasdgfhgdasjk")
+  db.select("*")
+  .from("filters")
+  .then((data)=>{
+    const result = data.reduce(function (r, a) {
+      r[a.filter_name] = r[a.filter_name] || [];
+      r[a.filter_name].push(a.fields);
+      return r;
+  }, Object.create(null));
+    
+    res.status(200).json({
+      message: `Filter options fetched successfully`,
+      data: result,
+    });
+  })
+  .catch((error)=>{
+    res.status(400).json({error:'Error occured whie trying to fetch filter options!',errorMsg:error});
+  })
+})
+
+
 
  export default router;

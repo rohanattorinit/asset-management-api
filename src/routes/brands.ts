@@ -8,6 +8,8 @@ interface Brand {
   name: string;
 }
 
+
+
 //add new brand
 router.post("/", isAuth, async (req: Request, res: Response) => {
   const { name }: { name: string } = req.body;
@@ -30,5 +32,9 @@ router.get("/", isAuth, async (_, res: Response) => {
     })
     .catch((error: Error) => res.status(400).json({ error }));
 });
+
+
+
+
 
 export default router;
