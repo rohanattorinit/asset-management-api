@@ -62,6 +62,7 @@ router.get("/",  async (req, res: Response) => {
  const {screen_type,ram,allocate, assetType, isRented,category,operating_system,processor,screen_size,asset_location}=req.body;
   db<Asset>("assets")
     .select("*")
+    .where('is_active',true)
     .modify((queryBuilder) => {
       if (allocate === "true") {
         queryBuilder?.where("status", `surplus`)
@@ -145,8 +146,7 @@ router.get("/",  async (req, res: Response) => {
 //get all details of a single asset
 router.get(
   "/singleAsset/:assetId",
-  isAuth,
-  isAdmin,
+  
   async (req: Request, res: Response) => {
     const { assetId } = req.params;
     if (!assetId) res.status(400).json({ error: "Asset Id is missing!" });
@@ -495,6 +495,19 @@ router.get("/filterOptions",async (_,res:Response) => {
   })
 })
 
+router.post('/delete/:assetId',async(req:Request,res:Response)=>{
+  const {assetId}=req?.params;
+  db('assetallocation')
+  .where('assetId', assetId)
+  .del()
+  .then(_=>{
+    db('assets')
+    .where('assetId',assetId)
+    .update({is_active:false})
+    .then(_=>res.status(200).json({ message: "Asset Deleted successfully!" }))
+    .catch(err=>res.status(400).json({error: "An error occured while trying to edit the asset",errorMsg: err}))
+  })
+  .catch(err=>res.status(400).json({error: "An error occured while trying to edit the asset",errorMsg: err}))
+})
 
-
- export default router;
+export default router;

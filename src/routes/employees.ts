@@ -110,11 +110,12 @@ router.post(
 
 //get all employees
 
-router.get("/", isAuth, isAdmin, async (req, res: Response) => {
+router.get("/",  async (req, res: Response) => {
   const name = req?.query?.name;
 
   db.select("*")
     .from("employees")
+    .where('is_active',true)
     .modify((queryBuilder) => {
       if (name) {
         queryBuilder?.where("name", "like", `%${name}%`);
@@ -173,17 +174,22 @@ router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
 });
 
 //delete an employee
-router.delete("/:id", isAuth, isAdmin, async (req: Request, res: Response) => {
+router.post("/delete/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
-  db<EmployeeType>("employees")
+  db<EmployeeType>("assetallocation")
     .where("empId", id)
     .del()
     .then(() => {
-      res.status(200).json({ message: "Employee Deleted successfully" });
+      db('employees')
+      .where('empId',id)
+      .update({'is_active':false})
+      .then(()=>res.status(200).json({ message: "Employee Deleted successfully" }))
+      .catch((error) => {
+        res.status(400).json({ error:'An error occured while trying to delete profile',errorMsg:error})
     })
     .catch((error) => {
-      res.status(400).json({ error });
-    });
-});
-
+      res.status(400).json({ error:'An error occured while trying to delete profile',errorMsg:error})
+    })
+})
+})
 export default router;
