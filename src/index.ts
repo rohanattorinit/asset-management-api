@@ -27,8 +27,8 @@ app.use("/api/brands", brandsRoute);
 app.use("/api/assets", assetRoute);
 app.use("/api/tickets", ticketRoute);
 
-// module.exports.handler = serverless(app);
-app.listen(port,()=>console.log(`Server Started at port: ${port}!`));
+module.exports.handler = serverless(app);
+//app.listen(port,()=>console.log(`Server Started at port: ${port}!`));
 
 
 
