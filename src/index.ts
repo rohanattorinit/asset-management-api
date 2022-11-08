@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import serverless from "serverless-http";
 dotenv.config();
 const port = process.env.PORT;
 const app = express();
@@ -16,7 +15,7 @@ import adminRoute from "./routes/admin";
 import authRoute from "./routes/auth";
 import assetRoute from "./routes/asset";
 import ticketRoute from "./routes/tickets";
-import { Express } from "express-serve-static-core";
+
 app.use("/api/auth", authRoute);
 
 app.use("/api/admin", adminRoute);
@@ -28,7 +27,8 @@ app.use("/api/brands", brandsRoute);
 app.use("/api/assets", assetRoute);
 app.use("/api/tickets", ticketRoute);
 
-module.exports.handler = serverless(app);
+// module.exports.handler = serverless(app);
+app.listen(port,()=>console.log(`Server Started at port: ${port}!`));
 
 
 
