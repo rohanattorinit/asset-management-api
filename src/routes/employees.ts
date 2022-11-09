@@ -110,12 +110,12 @@ router.post(
 
 //get all employees
 
-router.get("/",  async (req, res: Response) => {
+router.get("/", async (req, res: Response) => {
   const name = req?.query?.name;
 
   db.select("*")
     .from("employees")
-    .where('is_active',true)
+    .where("is_active", true)
     .modify((queryBuilder) => {
       if (name) {
         queryBuilder?.where("name", "like", `%${name}%`);
@@ -130,7 +130,10 @@ router.get("/",  async (req, res: Response) => {
     .catch((error) => {
       res
         .status(400)
-        .json({ error: "Error occured while trying to fetch employees",errorMsg:error});
+        .json({
+          error: "Error occured while trying to fetch employees",
+          errorMsg: error,
+        });
     });
 });
 
@@ -163,14 +166,19 @@ router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
   };
 
   db<EmployeeType>("employees")
-  .where("empId", id)
-  .update(employee)
-  .then(() => {
-    res.status(200).json({message:'Profile Updated successfully!'})
-  })
-  .catch((error) => {
-    res.status(400).json({ error:'An error occured while trying to update profile',errorMsg:error})
-  })
+    .where("empId", id)
+    .update(employee)
+    .then(() => {
+      res.status(200).json({ message: "Profile Updated successfully!" });
+    })
+    .catch((error) => {
+      res
+        .status(400)
+        .json({
+          error: "An error occured while trying to update profile",
+          errorMsg: error,
+        });
+    });
 });
 
 //delete an employee
@@ -180,16 +188,29 @@ router.post("/delete/:id", async (req: Request, res: Response) => {
     .where("empId", id)
     .del()
     .then(() => {
-      db('employees')
-      .where('empId',id)
-      .update({'is_active':false})
-      .then(()=>res.status(200).json({ message: "Employee Deleted successfully" }))
-      .catch((error) => {
-        res.status(400).json({ error:'An error occured while trying to delete profile',errorMsg:error})
-    })
-    .catch((error) => {
-      res.status(400).json({ error:'An error occured while trying to delete profile',errorMsg:error})
-    })
-})
-})
+      db("employees")
+        .where("empId", id)
+        .update({ is_active: false })
+        .then(() => {
+          //deallocate all assets of this employee
+          res.status(200).json({ message: "Employee Deleted successfully" });
+        })
+        .catch((error) => {
+          res
+            .status(400)
+            .json({
+              error: "An error occured while trying to delete profile",
+              errorMsg: error,
+            });
+        })
+        .catch((error) => {
+          res
+            .status(400)
+            .json({
+              error: "An error occured while trying to delete profile",
+              errorMsg: error,
+            });
+        });
+    });
+});
 export default router;
