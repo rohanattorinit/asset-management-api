@@ -18,14 +18,14 @@ interface Asset {
   description: string
   status: 'allocated' | 'surplus' | 'broken' | 'repairable'
   //usability: "usable" | "unusable" | "disposed";
-
-  processor: string
-  screen_type: string
-  ram: number
-  operating_system: string
-  screen_size: number
-  asset_location: string
-  addedTime: string
+  is_active?: boolean
+  processor?: string
+  screen_type?: string
+  ram?: string
+  operating_system?: string
+  screen_size?: string
+  asset_location?: string
+  addedTime?: string
   isRented?: boolean
   vendor?: string
   rent?: number
@@ -49,6 +49,11 @@ interface UpdateAssetType {
   rentStartDate?: string
   rentEndDate?: string
   received_date?: string
+  ram?: string
+  processor?: string
+  screen_type?: string
+  operating_system?: string
+  screen_size?: string
 }
 
 interface Filters {
@@ -71,6 +76,7 @@ router.get('/', isAuth, isAdmin, async (req, res: Response) => {
   const { screen_type } = req.body
   db<Asset>('assets')
     .select('*')
+    .where('is_active', true)
     .modify(queryBuilder => {
       if (allocate === 'true') {
         queryBuilder?.where('status', `surplus`)
@@ -115,8 +121,99 @@ router.get('/', isAuth, isAdmin, async (req, res: Response) => {
 //get all details of a single asset
 router.get(
   '/singleAsset/:assetId',
-  isAuth,
-  isAdmin,
+
+  // async (req: Request, res: Response) => {
+  //   const { assetId } = req.params
+  //   if (!assetId) res.status(400).json({ error: 'Asset Id is missing!' })
+
+  //   db.select(
+  //     'assets.assetId',
+  //     'brands.name as brandName',
+  //     'assets.name',
+  //     'assets.description',
+  //     'assets.modelNo',
+  //     'assets.status',
+  //     //"assets.usability",
+  //     'assets.asset_location',
+  //     'assets.isRented',
+  //     'assets.vendor',
+  //     'assets.rent',
+  //     'assets.deposit',
+  //     'assets.rentStartDate',
+  //     'assets.rentEndDate',
+  //     'assets.processor',
+  //     'assets.screen_type',
+  //     'assets.category',
+  //     'assets.ram',
+  //     'assets.operating_system',
+  //     'assets.screen_size',
+  //     'assets.received_date'
+  //   )
+  //     .from('assets')
+  //     .join('brands', 'assets.brandId', '=', 'brands.brandId')
+  //     .where('assets.assetId', '=', assetId)
+  //     .where('assets.is_active', true)
+  //     .first()
+  //     .then(async data => {
+  //       if (data.status === 'allocated') {
+  //         db.select(
+  //           'assets.assetId',
+  //           'brands.name as brandName',
+  //           'assets.name',
+  //           'assets.description',
+  //           'assets.modelNo',
+  //           'assets.status',
+  //           //"assets.usability",
+  //           'employees.empId',
+  //           'employees.name as empName',
+  //           'assets.asset_location',
+  //           'assets.isRented',
+  //           'assets.vendor',
+  //           'assets.rent',
+  //           'assets.deposit',
+  //           'assets.rentStartDate',
+  //           'assets.rentEndDate',
+  //           'assets.processor',
+  //           'assets.screen_type',
+  //           'assets.category',
+  //           'assets.ram',
+  //           'assets.operating_system',
+  //           'assets.screen_size',
+  //           'assets.received_date'
+  //         )
+  //           .from('assets')
+  //           .join('brands', 'assets.brandId', '=', 'brands.brandId')
+  //           .join(
+  //             'assetallocation',
+  //             'assetallocation.assetId',
+  //             'assets.assetId'
+  //           )
+  //           .join('employees', 'assetallocation.empId', 'employees.empId')
+  //           .where('assets.assetId', '=', assetId)
+  //           .first()
+  //           .then(data => {
+  //             res.status(200).json({ data: data })
+  //           })
+  //           .catch(error =>
+  //             res.status(400).json({
+  //               error: 'Error occured while fetching asset details',
+  //               errorMsg: error
+  //             })
+  //           )
+  //       } else {
+  //         res.status(200).json({
+  //           message: `Asset with assetId:${assetId} fetched successfully`,
+  //           data: data
+  //         })
+  //       }
+  //     })
+  //     .catch(error => {
+  //       res
+  //         .status(400)
+  //         .json({ error: 'Error occured while fetching asset details' })
+  //     })
+  // }
+
   async (req: Request, res: Response) => {
     const { assetId } = req.params
     if (!assetId) res.status(400).json({ error: 'Asset Id is missing!' })
@@ -134,14 +231,7 @@ router.get(
       'assets.rent',
       'assets.deposit',
       'assets.rentStartDate',
-      'assets.rentEndDate',
-      'assets.processor',
-      'assets.screen_type',
-      'assets.category',
-      'assets.ram',
-      'assets.operating_system',
-      'assets.screen_size',
-      'assets.received_date'
+      'assets.rentEndDate'
     )
       .from('assets')
       .join('brands', 'assets.brandId', '=', 'brands.brandId')
@@ -165,14 +255,7 @@ router.get(
             'assets.rent',
             'assets.deposit',
             'assets.rentStartDate',
-            'assets.rentEndDate',
-            'assets.processor',
-            'assets.screen_type',
-            'assets.category',
-            'assets.ram',
-            'assets.operating_system',
-            'assets.screen_size',
-            'assets.received_date'
+            'assets.rentEndDate'
           )
             .from('assets')
             .join('brands', 'assets.brandId', '=', 'brands.brandId')
@@ -277,15 +360,18 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
           category,
           modelNo,
           description,
-          status: 'surplus',
+          status,
           processor,
           screen_type,
-          ram: parseInt(ram, 10),
+          ram,
+          screen_size,
+          //ram: ram?.length ? parseInt(ram, 10) : undefined,
           operating_system,
-          screen_size: parseInt(screen_size, 10),
+          // screen_size: screen_size?.length
+          //   ? parseInt(screen_size, 10)
+          //   : undefined,
           //usability,
           asset_location,
-
           addedTime: moment().format('YYYY-MM-DD HH:mm:ss'),
           isRented,
           vendor,
@@ -304,13 +390,17 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
           isRented,
           description,
           received_date,
-          status: 'surplus',
+          status,
           processor,
           screen_type,
+          //ram: ram?.length ? parseInt(ram, 10) : undefined,
           ram,
-          operating_system,
           screen_size,
-          //usability,
+          operating_system,
+          // screen_size: screen_size?.length
+          //   ? parseInt(screen_size, 10)
+          //   : undefined,
+          // //usability,
           asset_location,
           addedTime: moment().format('YYYY-MM-DD HH:mm:ss')
         }
@@ -394,9 +484,17 @@ router.post('/update/:id', isAuth, async (req: Request, res: Response) => {
     rent,
     deposit,
     rentStartDate,
-    asset_location,
     rentEndDate,
+    asset_location,
+    ram,
+    processor,
+    screen_type,
+    operating_system,
+    screen_size,
     received_date
+
+    //rentEndDate
+    //received_date
   } = req.body
   const { id } = req.params
 
@@ -413,9 +511,14 @@ router.post('/update/:id', isAuth, async (req: Request, res: Response) => {
     deposit,
     rentStartDate,
     rentEndDate,
-    received_date
+    received_date,
+    ram,
+    processor,
+    screen_type,
+    operating_system,
+    screen_size
   }
-  console.log('asset=>', asset)
+
   try {
     db<Asset>('assets')
       .where('assetId', id)
@@ -482,6 +585,33 @@ router.get('/filterOptions', async (_, res: Response) => {
         errorMsg: error
       })
     })
+})
+
+router.post('/delete/:assetId', async (req: Request, res: Response) => {
+  const { assetId } = req?.params
+  db('assetallocation')
+    .where('assetId', assetId)
+    .del()
+    .then(() => {
+      db('assets')
+        .where('assetId', assetId)
+        .update({ is_active: false })
+        .then(() =>
+          res.status(200).json({ message: 'Asset Deleted successfully!' })
+        )
+        .catch(err =>
+          res.status(400).json({
+            error: 'An error occured while trying to delete the asset',
+            errorMsg: err
+          })
+        )
+    })
+    .catch(err =>
+      res.status(400).json({
+        error: 'An error occured while trying to delete the asset',
+        errorMsg: err
+      })
+    )
 })
 
 export default router
