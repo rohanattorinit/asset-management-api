@@ -34,8 +34,10 @@ interface Asset {
   rentStartDate?: string;
   rentEndDate?: string;
   empId?: string;
+
   received_date?:string,
   harddisk?: string;
+
 }
 
 // interface UpdateAssetType {
@@ -279,6 +281,7 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
       received_date,
       empId,
       harddisk
+
     } = req.body
     if (isRented) {
       if (!vendor || !deposit || !rentStartDate || !rentEndDate) {
@@ -318,6 +321,7 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
           rentEndDate,
           received_date,
           harddisk
+
         }
       : {
           brandId,
@@ -340,6 +344,7 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
           //   : undefined,
           // //usability,
           asset_location,
+
           addedTime: moment().format('YYYY-MM-DD HH:mm:ss'),
           harddisk
         }
@@ -347,12 +352,13 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
           
         await db<Asset>('assets').insert(asset)
         const id = await db
+
       .select('assetId')
       .from('assets')
       .where('modelNo', modelNo)
       .first()
 
-   
+
 
     const allocateObj = {
       empId: empId,
@@ -360,6 +366,7 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
       allocationtime: asset?.addedTime
     }
     await db('assetallocation').insert(allocateObj)
+
   }
 
     res.status(200).json({
@@ -407,7 +414,7 @@ router.post(
             });
   
             const resAssets: Asset[] = await Promise.all(allAssets)
-            
+
               const allocatedEmp = resAssets?.map((asset) => {
                 if(asset?.status === "allocated"){
                   const obj = {
@@ -425,14 +432,16 @@ router.post(
                   return asset
               })
             
+
             if(allocatedEmp[0]?.empId){
+
 
             await db<Asset>("assets").insert(refineAssets as unknown as Asset)
                   
             const data = await  db<Asset>("assets").select("*")
             const allocateData = data?.filter((el) => el?.status === "allocated")
             const allocateinsertdata: any = [];
-            
+
             allocatedEmp?.map((elobj) =>{
                allocateData?.map((asset) =>{
                 if(asset?.modelNo === elobj?.modelNo){
@@ -445,6 +454,7 @@ router.post(
                 }
               })
             })
+
               await db("assetallocation").insert(allocateinsertdata as any)
               res.status(200).json({ message: "Assets added Successfully!" })
             } else{
@@ -454,6 +464,7 @@ router.post(
                 res.status(200).json({ message: 'Assets added Successfully!' })
               
             }
+
           } catch(error: any){
             if(error?.code === "ER_DUP_ENTRY" ){
               res.status(400).json({
