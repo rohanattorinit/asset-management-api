@@ -14,25 +14,17 @@ interface Asset {
   brandId: number;
   name: string;
   assetType: "software" | "hardware";
-  category:
-    | "laptop"
-    | "mouse"
-    | "hdmi cable"
-    | "mobile"
-    | "monitor"
-    | "keyboard"
-    | "headset"
-    | "other";
+  category: "laptop" | "mouse" | "hdmi cable" | "mobile" | "monitor" | "keyboard" | "headset" | "other";
   modelNo: string;
   description: string;
   status: "allocated" | "surplus" | "broken" | "repairable";
   //usability: "usable" | "unusable" | "disposed";
-
-  processor: string;
-  screen_type: string;
-  ram: number;
-  operating_system: string;
-  screen_size: number;
+ 
+  processor:string;
+  screen_type:string;
+  ram:number;
+  operating_system:string;
+  screen_size:number;
   asset_location: string;
   addedTime: string;
   isRented?: boolean;
@@ -41,142 +33,123 @@ interface Asset {
   deposit?: number;
   rentStartDate?: string;
   rentEndDate?: string;
+  empId?: string;
+  received_date?:string,
+  harddisk?: string;
 }
 
-interface Filters {
-  fieldId?: number;
-  fields: string;
-  filter_name: string;
+// interface UpdateAssetType {
+//   name?: string;
+//   modelNo?: string;
+//   description?: string;
+//   status?: "available" | "allocated";
+//   usability?: "usable" | "unusable" | "disposed";
+//   asset_location: string;
+//   isRented: boolean;
+//   vendor?: string;
+//   rent?: number;
+//   deposit?: number;
+//   rentStartDate?: string;
+//   rentEndDate?: string;
+// }
+
+interface Filters{
+  fieldId? : number;
+  fields : string;
+  filter_name : string;
 }
 
 //get all assets
-router.get("/", async (req, res: Response) => {
-  const { name } = req?.query;
+router.get("/",  async (req, res: Response) => {
+  const {name} = req?.query;
+ const {screen_type,ram,allocate, assetType, isRented,category,operating_system,processor,screen_size,asset_location}=req.body;
   db<Asset>("assets")
     .select("*")
-    .where("is_active", true)
-    .where("name", "like", `%${name}%`)
-    .then((data) => {
-      res.status(200).json({
-        message: "All assets fetched successfully",
-        data: data,
-      });
-    })
-    .catch((error) => {
-      res.status(400).json({
-        error: "Error occured while fetching assets!",
-        errorMsg: error,
-      });
-    });
-});
-
-//Filters on assset
-router.post("/filter", async (req: Request, res: Response) => {
-  const {
-    screen_type,
-    ram,
-    status,
-    assetType,
-    isRented,
-    category,
-    operating_system,
-    processor,
-    screen_size,
-    asset_location,
-  } = req.body;
-  db<Asset>("assets")
-    .select("*")
-    .where("is_active", true)
+    .where('is_active',true)
     .modify((queryBuilder) => {
-      // if (allocate === "true") {
-      //   queryBuilder?.where("status", `surplus`);
-      // }
+      if (allocate === "true") {
+        queryBuilder?.where("status", `surplus`)
+      }
       if (isRented === "0" || isRented === "1") {
         queryBuilder?.where("isRented", "=", `${isRented}`);
       }
       if (assetType === "hardware" || assetType === "software") {
         queryBuilder?.where("assetType", "=", assetType);
       }
-      if (screen_type?.length > 0) {
-        queryBuilder?.where(function () {
+      if (screen_type?.length>0) {
+        queryBuilder?.where(function(){
           //@ts-ignore
-          screen_type?.map((screen) => this.orWhere("screen_type", screen));
-        });
+          screen_type?.map(screen=>this.orWhere('screen_type',screen))
+        }
+        )
       }
 
-      if (status?.length > 0) {
-        queryBuilder?.where(function () {
+      if (operating_system?.length>0) {
+        queryBuilder?.where(function(){
           //@ts-ignore
-          status?.map((status) => this.orWhere("status", status));
-        });
+          operating_system?.map(os=>this.orWhere('operating_system',os))
+        }
+        )
       }
 
-      if (operating_system?.length > 0) {
-        queryBuilder?.where(function () {
+      if (category?.length>0) {
+        queryBuilder?.where(function(){
           //@ts-ignore
-          operating_system?.map((os) => this.orWhere("operating_system", os));
-        });
+          category?.map(categoryoptions=>this.orWhere('category',categoryoptions))
+        }
+        )
       }
 
-      if (category?.length > 0) {
-        queryBuilder?.where(function () {
+      if (processor?.length>0) {
+        queryBuilder?.where(function(){
           //@ts-ignore
-          category?.map((categoryoptions) =>
-            this.orWhere("category", categoryoptions)
-          );
-        });
+          processor?.map(processoroptions=>this.orWhere('processor',processoroptions))
+        }
+        )
+      }
+      
+      if (ram?.length>0) {
+        queryBuilder?.where(function(){
+          //@ts-ignore
+          ram?.map(ramoptions=>this.orWhere('ram',ramoptions))
+        }
+        )
+      }
+      
+      if (screen_size?.length>0) {
+        queryBuilder?.where(function(){
+          //@ts-ignore
+          screen_size?.map(size=>this.orWhere('screen_size',size))
+        }
+        )
       }
 
-      if (processor?.length > 0) {
-        queryBuilder?.where(function () {
+      if (asset_location?.length>0) {
+        queryBuilder?.where(function(){
           //@ts-ignore
-          processor?.map((processoroptions) =>
-            this.orWhere("processor", processoroptions)
-          );
-        });
+          asset_location?.map(assetlocation=>this.orWhere('asset_location',assetlocation))
+        }
+        )
       }
-
-      if (ram?.length > 0) {
-        queryBuilder?.where(function () {
-          //@ts-ignore
-          ram?.map((ramoptions) => this.orWhere("ram", ramoptions));
-        });
-      }
-
-      if (screen_size?.length > 0) {
-        queryBuilder?.where(function () {
-          //@ts-ignore
-          screen_size?.map((size) => this.orWhere("screen_size", size));
-        });
-      }
-
-      if (asset_location?.length > 0) {
-        queryBuilder?.where(function () {
-          //@ts-ignore
-          asset_location?.map((assetlocation) =>
-            this.orWhere("asset_location", assetlocation)
-          );
-        });
-      }
+      
     })
+    .where("name", "like", `%${name}%`)
     .then((data) => {
+      console.log(data)
       res.status(200).json({
         message: "All assets fetched successfully",
         data: data,
       });
     })
     .catch((error) => {
-      res.status(400).json({
-        error: "Error occured while fetching assets!",
-        errorMsg: error,
-      });
+      res.status(400).json({ error: "Error occured while fetching assets!",errorMsg:error });
     });
 });
 
 //get all details of a single asset
 router.get(
   "/singleAsset/:assetId",
-
+  
   async (req: Request, res: Response) => {
     const { assetId } = req.params;
     if (!assetId) res.status(400).json({ error: "Asset Id is missing!" });
@@ -280,7 +253,7 @@ router.get("/employeeAssets/:empId", isAuth, async (req, res) => {
 });
 
 //create a new asset
-router.post("/addAsset", async (req, res) => {
+router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
   try {
     const {
       assetName,
@@ -303,7 +276,10 @@ router.post("/addAsset", async (req, res) => {
       deposit,
       rentStartDate,
       rentEndDate,
-    } = req.body;
+      received_date,
+      empId,
+      harddisk
+    } = req.body
     if (isRented) {
       if (!vendor || !deposit || !rentStartDate || !rentEndDate) {
         return res
@@ -324,7 +300,7 @@ router.post("/addAsset", async (req, res) => {
           category,
           modelNo,
           description,
-          status: "surplus",
+          status,
           processor,
           screen_type,
           ram,
@@ -332,7 +308,7 @@ router.post("/addAsset", async (req, res) => {
           screen_size,
           //usability,
           asset_location,
-
+          
           addedTime: moment().format("YYYY-MM-DD HH:mm:ss"),
           isRented,
           vendor,
@@ -340,6 +316,8 @@ router.post("/addAsset", async (req, res) => {
           deposit,
           rentStartDate,
           rentEndDate,
+          received_date,
+          harddisk
         }
       : {
           brandId,
@@ -349,41 +327,57 @@ router.post("/addAsset", async (req, res) => {
           modelNo,
           isRented,
           description,
-          status: "surplus",
+          received_date,
+          status,
           processor,
           screen_type,
+          //ram: ram?.length ? parseInt(ram, 10) : undefined,
           ram,
-          operating_system,
           screen_size,
-          //usability,
+          operating_system,
+          // screen_size: screen_size?.length
+          //   ? parseInt(screen_size, 10)
+          //   : undefined,
+          // //usability,
           asset_location,
-          addedTime: moment().format("YYYY-MM-DD HH:mm:ss"),
-        };
-    db<Asset>("assets")
-      .insert(asset)
-      .then(() => {
-        res.status(200).json({
-          message: "Asset created successfully",
-        });
-      })
-      .catch((error) => {
-        //Tocheck Whether it is present in db(dublicate entry)
-        if (error.code === "ER_DUP_ENTRY") {
-          res.status(400).json({
-            error: "Asset Already Exists",
-            errorMsg: error,
-          });
-        } else {
-          res.status(400).json({
-            error: "Error occured while creating asset",
-            errorMsg: error,
-          });
+          addedTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+          harddisk
         }
-      });
-  } catch (error) {
-    res.status(400).json({ error });
+        if(empId) {
+          
+        await db<Asset>('assets').insert(asset)
+        const id = await db
+      .select('assetId')
+      .from('assets')
+      .where('modelNo', modelNo)
+      .first()
+
+   
+
+    const allocateObj = {
+      empId: empId,
+      assetId: id?.assetId,
+      allocationtime: asset?.addedTime
+    }
+    await db('assetallocation').insert(allocateObj)
   }
-});
+
+    res.status(200).json({
+      message: 'Asset created successfully'
+    })
+  } catch (error: any) {
+    if (error?.code === 'ER_DUP_ENTRY') {
+      res.status(400).json({
+        error: 'duplicate Data',
+        errorMsg: error,
+      })
+    } else {
+      res.status(400).json({
+        error
+      })
+    }
+  }
+})
 
 //add bulk assets
 router.post(
@@ -393,31 +387,87 @@ router.post(
   upload.single("csvFile"),
   async (req: Request, res: Response) => {
     try {
-      const results: Asset[] = [];
-      fs.createReadStream(req.file?.path!)
+        const results: Asset[] = [];
+        fs.createReadStream(req.file?.path!)
         .pipe(csv())
         .on("data", (data: Asset) => results.push(data))
         .on("end", async () => {
-          const assets = results.map(async (result: any) => {
-            return await db("brands")
-              .select("brandId")
-              .where("name", "=", result.brandName)
-              .then((data) => {
-                delete result["brandName"];
-                result.brandId = data[0].brandId;
-                result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
+          try{
+            const allAssets = results.map(async (result: any) => {
+              return await db("brands")
+                .select("brandId")
+                .where("name", "=", result.brandName)
+                .then((data) => {
+                  delete result["brandName"];
+                  result.brandId = data[0].brandId;
+                  result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
+  
+                  return result;
+                });
+            });
+  
+            const resAssets: Asset[] = await Promise.all(allAssets)
+            
+              const allocatedEmp = resAssets?.map((asset) => {
+                if(asset?.status === "allocated"){
+                  const obj = {
+                    empId: asset?.empId,
+                    modelNo: asset?.modelNo,
+                    allocationTime: asset?.addedTime
+                  }
+                  return obj
+                }
+  
+              })
+  
+             const refineAssets =  resAssets.map((asset) => {
+                  delete asset?.empId
+                  return asset
+              })
+            
+            if(allocatedEmp[0]?.empId){
 
-                return result;
-              });
-          });
-
-          Promise.all(assets).then((results) => {
-            db<Asset>("assets")
-              .insert(results as unknown as Asset)
-              .then(() => {
-                res.status(200).json({ message: "Assets added Successfully!" });
-              });
-          });
+            await db<Asset>("assets").insert(refineAssets as unknown as Asset)
+                  
+            const data = await  db<Asset>("assets").select("*")
+            const allocateData = data?.filter((el) => el?.status === "allocated")
+            const allocateinsertdata: any = [];
+            
+            allocatedEmp?.map((elobj) =>{
+               allocateData?.map((asset) =>{
+                if(asset?.modelNo === elobj?.modelNo){
+                  const allocationobj= {
+                    empId: elobj?.empId,
+                    assetId: asset?.assetId,
+                    allocationTime: elobj?.allocationTime
+                  }
+                  allocateinsertdata.push(allocationobj)
+                }
+              })
+            })
+              await db("assetallocation").insert(allocateinsertdata as any)
+              res.status(200).json({ message: "Assets added Successfully!" })
+            } else{
+              await db<Asset>('assets')
+              .insert((refineAssets as unknown) as Asset)
+              
+                res.status(200).json({ message: 'Assets added Successfully!' })
+              
+            }
+          } catch(error: any){
+            if(error?.code === "ER_DUP_ENTRY" ){
+              res.status(400).json({
+                error : "duplicate Data",
+                errorMsg: error,
+              })
+            } else {
+              res.status(400).json({
+                error
+              })
+            }
+            
+          }
+          
         });
     } catch (error) {
       res.status(400).json({ error: "Error while creating adding assets" });
@@ -503,56 +553,41 @@ router.post(
 //   }
 // });
 
-router.get("/filterOptions", async (_, res: Response) => {
+
+router.get("/filterOptions",async (_,res:Response) => {
   // console.log("sadasdgfhgdasjk")
   db.select("*")
-    .from("filters")
-    .then((data) => {
-      const result = data.reduce(function (r, a) {
-        r[a.filter_name] = r[a.filter_name] || [];
-        r[a.filter_name].push(a.fields);
-        return r;
-      }, Object.create(null));
-
-      res.status(200).json({
-        message: `Filter options fetched successfully`,
-        data: result,
-      });
-    })
-    .catch((error) => {
-      res.status(400).json({
-        error: "Error occured whie trying to fetch filter options!",
-        errorMsg: error,
-      });
+  .from("filters")
+  .then((data)=>{
+    const result = data.reduce(function (r, a) {
+      r[a.filter_name] = r[a.filter_name] || [];
+      r[a.filter_name].push(a.fields);
+      return r;
+  }, Object.create(null));
+    
+    res.status(200).json({
+      message: `Filter options fetched successfully`,
+      data: result,
     });
-});
+  })
+  .catch((error)=>{
+    res.status(400).json({error:'Error occured whie trying to fetch filter options!',errorMsg:error});
+  })
+})
 
-//Delete an asset
-router.post("/delete/:assetId", async (req: Request, res: Response) => {
-  const { assetId } = req?.params;
-  db("assetallocation")
-    .where("assetId", assetId)
-    .del()
-    .then(() => {
-      db("assets")
-        .where("assetId", assetId)
-        .update({ status: "surplus", is_active: false })
-        .then(() =>
-          res.status(200).json({ message: "Asset Deleted successfully!" })
-        )
-        .catch((err) =>
-          res.status(400).json({
-            error: "An error occured while trying to edit the asset",
-            errorMsg: err,
-          })
-        );
-    })
-    .catch((err) =>
-      res.status(400).json({
-        error: "An error occured while trying to edit the asset",
-        errorMsg: err,
-      })
-    );
-});
+router.post('/delete/:assetId',async(req:Request,res:Response)=>{
+  const {assetId}=req?.params;
+  db('assetallocation')
+  .where('assetId', assetId)
+  .del()
+  .then(_=>{
+    db('assets')
+    .where('assetId',assetId)
+    .update({is_active:false})
+    .then(_=>res.status(200).json({ message: "Asset Deleted successfully!" }))
+    .catch(err=>res.status(400).json({error: "An error occured while trying to edit the asset",errorMsg: err}))
+  })
+  .catch(err=>res.status(400).json({error: "An error occured while trying to edit the asset",errorMsg: err}))
+})
 
 export default router;
