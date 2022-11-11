@@ -44,7 +44,7 @@ router.post(
       .del()
       .then(() => {
         db("assets")
-          .update({ status: "available" })
+          .update({ status: "surplus" })
           .where("assetId", assetId)
           .then(() => {
             res

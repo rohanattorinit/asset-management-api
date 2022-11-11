@@ -33,6 +33,7 @@ interface Asset {
   rentStartDate?: string
   rentEndDate?: string
   received_date?: string
+  empId?: string
 }
 
 interface UpdateAssetType {
@@ -69,7 +70,7 @@ router.get('/', isAuth, isAdmin, async (req, res: Response) => {
     allocate,
     assetType,
     isRented,
-    category,
+ 
     operating_system,
     processor
   } = req?.query
@@ -91,20 +92,18 @@ router.get('/', isAuth, isAdmin, async (req, res: Response) => {
         queryBuilder?.where('screen_type', '=', screen_type)
       }
       if (operating_system && operating_system !== 'undefined') {
-        console.log('data=>', operating_system)
+        //console.log('data=>', operating_system)
         queryBuilder?.where('operating_system', '=', operating_system)
       }
-      if (category && category !== 'undefined') {
-        //console.log("data=>",category)
-        queryBuilder?.where('catergory', '=', category)
-      }
+      
       if (processor && processor !== 'undefined') {
         queryBuilder?.where('processor', '=', processor)
       }
     })
     .where('name', 'like', `%${name}%`)
     .then(data => {
-      console.log(data)
+      // console.log(data)
+      
       res.status(200).json({
         message: 'All assets fetched successfully',
         data: data
@@ -217,6 +216,7 @@ router.get(
   async (req: Request, res: Response) => {
     const { assetId } = req.params
     if (!assetId) res.status(400).json({ error: 'Asset Id is missing!' })
+
     db.select(
       'assets.assetId',
       'brands.name as brandName',
@@ -231,11 +231,19 @@ router.get(
       'assets.rent',
       'assets.deposit',
       'assets.rentStartDate',
-      'assets.rentEndDate'
+      'assets.rentEndDate',
+      'assets.processor',
+      'assets.screen_type',
+      'assets.category',
+      'assets.ram',
+      'assets.operating_system',
+      'assets.screen_size',
+      'assets.received_date'
     )
       .from('assets')
       .join('brands', 'assets.brandId', '=', 'brands.brandId')
       .where('assets.assetId', '=', assetId)
+      .where('assets.is_active', true)
       .first()
       .then(async data => {
         if (data.status === 'allocated') {
@@ -255,7 +263,14 @@ router.get(
             'assets.rent',
             'assets.deposit',
             'assets.rentStartDate',
-            'assets.rentEndDate'
+            'assets.rentEndDate',
+            'assets.processor',
+            'assets.screen_type',
+            'assets.category',
+            'assets.ram',
+            'assets.operating_system',
+            'assets.screen_size',
+            'assets.received_date'
           )
             .from('assets')
             .join('brands', 'assets.brandId', '=', 'brands.brandId')
@@ -268,6 +283,7 @@ router.get(
             .where('assets.assetId', '=', assetId)
             .first()
             .then(data => {
+              console.log(data?.received_date)
               res.status(200).json({ data: data })
             })
             .catch(error =>
@@ -277,6 +293,7 @@ router.get(
               })
             )
         } else {
+          console.log({data})
           res.status(200).json({
             message: `Asset with assetId:${assetId} fetched successfully`,
             data: data
@@ -318,6 +335,7 @@ router.get('/employeeAssets/:empId', isAuth, async (req, res) => {
 
 //create a new asset
 router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
+  
   try {
     const {
       assetName,
@@ -340,9 +358,13 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
       deposit,
       rentStartDate,
       rentEndDate,
-      received_date
+      received_date,
+      empId
     } = req.body
+
+    
     if (isRented) {
+      
       if (!vendor || !deposit || !rentStartDate || !rentEndDate) {
         return res.status(400).json({ error: 'Please provide rental details!' })
       }
@@ -352,6 +374,7 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
       .select('brandId')
       .where('name', '=', brandName)
     const brandId = brandArr[0].brandId
+    
     const asset: Asset = isRented
       ? {
           brandId,
@@ -404,71 +427,133 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
           asset_location,
           addedTime: moment().format('YYYY-MM-DD HH:mm:ss')
         }
-    db<Asset>('assets')
-      .insert(asset)
-      .then(() => {
-        res.status(200).json({
-          message: 'Asset created successfully'
-        })
+        if(empId) {
+          
+        await db<Asset>('assets').insert(asset)
+        const id = await db
+      .select('assetId')
+      .from('assets')
+      .where('modelNo', modelNo)
+      .first()
+
+   
+
+    const allocateObj = {
+      empId: empId,
+      assetId: id?.assetId,
+      allocationtime: asset?.addedTime
+    }
+
+    await db('assetallocation').insert(allocateObj)
+  }
+
+    res.status(200).json({
+      message: 'Asset created successfully'
+    })
+  } catch (error: any) {
+    if (error?.code === 'ER_DUP_ENTRY') {
+      res.status(400).json({
+        error: 'Duplicate asset data',
+        errorMsg: error,
       })
-      .catch(error => {
-        //Tocheck Whether it is present in db(dublicate entry)
-        if (error.code === 'ER_DUP_ENTRY') {
-          res.status(400).json({
-            error: 'Asset Already Exists',
-            errorMsg: error
-          })
-        } else {
-          res.status(400).json({
-            error: 'Error occured while creating asset',
-            errorMsg: error
-          })
-        }
+    } else {
+      res.status(400).json({
+        error
       })
-  } catch (error) {
-    res.status(400).json({ error })
+    }
   }
 })
 
 //add bulk assets
+
 router.post(
-  '/create-bulk',
+  "/create-bulk",
   isAuth,
   isAdmin,
-  upload.single('csvFile'),
+  upload.single("csvFile"),
   async (req: Request, res: Response) => {
     try {
-      const results: Asset[] = []
-      fs.createReadStream(req.file?.path!)
+        const results: Asset[] = [];
+        fs.createReadStream(req.file?.path!)
         .pipe(csv())
-        .on('data', (data: Asset) => results.push(data))
-        .on('end', async () => {
-          const assets = results.map(async (result: any) => {
-            return await db('brands')
-              .select('brandId')
-              .where('name', '=', result.brandName)
-              .then(data => {
-                delete result['brandName']
-                result.brandId = data[0].brandId
-                result.addedTime = moment().format('YYYY-MM-DD HH:mm:ss')
-
-                return result
+        .on("data", (data: Asset) => results.push(data))
+        .on("end", async () => {
+          try{
+            const allAssets = results.map(async (result: any) => {
+              return await db("brands")
+                .select("brandId")
+                .where("name", "=", result.brandName)
+                .then((data) => {
+                  delete result["brandName"];
+                  result.brandId = data[0].brandId;
+                  result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
+                  return result;
+                });
+            });
+            const resAssets: Asset[] = await Promise.all(allAssets)
+            
+              const allocatedEmp = resAssets?.map((asset) => {
+                if(asset?.status === "allocated"){
+                  const obj = {
+                    empId: asset?.empId,
+                    modelNo: asset?.modelNo,
+                    allocationTime: asset?.addedTime
+                  }
+                  return obj
+                }
               })
-          })
+             const refineAssets =  resAssets.map((asset) => {
+                  delete asset?.empId
+                  return asset
+              })
+            
+            if(allocatedEmp[0]?.empId){
 
-          Promise.all(assets).then(results => {
-            db<Asset>('assets')
-              .insert((results as unknown) as Asset)
-              .then(() => {
+            await db<Asset>("assets").insert(refineAssets as unknown as Asset)
+            const data = await  db<Asset>("assets").select("*")
+            const allocateData = data?.filter((el) => el?.status === "allocated")
+            const alocateinsertdata: any = [];
+            
+            allocatedEmp?.map((elobj) =>{
+               allocateData?.map((asset) =>{
+                if(asset?.modelNo === elobj?.modelNo){
+                  const allocationobj= {
+                    empId: elobj?.empId,
+                    assetId: asset?.assetId,
+                    allocationTime: elobj?.allocationTime
+                  }
+                  alocateinsertdata.push(allocationobj)
+                }
+              })
+            })
+              await db("assetallocation").insert(alocateinsertdata as any)
+              res.status(200).json({ message: "Assets added Successfully!" })
+            } else{
+              await db<Asset>('assets')
+              .insert((refineAssets as unknown) as Asset)
+              
                 res.status(200).json({ message: 'Assets added Successfully!' })
+              
+            }
+          } catch(error: any){
+            if(error?.code === "ER_DUP_ENTRY" ){
+              res.status(400).json({
+                error : "duplicate Data",
+                errorMsg: error,
               })
-          })
-        })
+            } else {
+              console.log({error})
+              res.status(400).json({
+                error
+              })
+            }
+          }
+        });
     } catch (error) {
-      res.status(400).json({ error: 'Error while creating adding assets' })
+      res.status(400).json({ error: error });
     }
   }
-)
+);
 
 //update assets
 router.post('/update/:id', isAuth, async (req: Request, res: Response) => {
