@@ -34,7 +34,10 @@ interface Asset {
   rentStartDate?: string;
   rentEndDate?: string;
   empId?: string;
-  received_date?:string
+
+  received_date?:string,
+  harddisk?: string;
+
 }
 
 // interface UpdateAssetType {
@@ -276,7 +279,9 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
       rentStartDate,
       rentEndDate,
       received_date,
-      empId
+      empId,
+      harddisk
+
     } = req.body
     if (isRented) {
       if (!vendor || !deposit || !rentStartDate || !rentEndDate) {
@@ -314,7 +319,9 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
           deposit,
           rentStartDate,
           rentEndDate,
-          received_date
+          received_date,
+          harddisk
+
         }
       : {
           brandId,
@@ -337,18 +344,21 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
           //   : undefined,
           // //usability,
           asset_location,
-          addedTime: moment().format('YYYY-MM-DD HH:mm:ss')
+
+          addedTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+          harddisk
         }
-    await db<Asset>('assets').insert(asset)
-    const id = await db
+        if(empId) {
+          
+        await db<Asset>('assets').insert(asset)
+        const id = await db
+
       .select('assetId')
       .from('assets')
       .where('modelNo', modelNo)
       .first()
 
-        if(id === undefined){
-          await db.delete()
-        }
+
 
     const allocateObj = {
       empId: empId,
@@ -356,6 +366,9 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
       allocationtime: asset?.addedTime
     }
     await db('assetallocation').insert(allocateObj)
+
+  }
+
     res.status(200).json({
       message: 'Asset created successfully'
     })
@@ -401,7 +414,7 @@ router.post(
             });
   
             const resAssets: Asset[] = await Promise.all(allAssets)
-              
+
               const allocatedEmp = resAssets?.map((asset) => {
                 if(asset?.status === "allocated"){
                   const obj = {
@@ -419,12 +432,16 @@ router.post(
                   return asset
               })
             
+
+            if(allocatedEmp[0]?.empId){
+
+
             await db<Asset>("assets").insert(refineAssets as unknown as Asset)
                   
             const data = await  db<Asset>("assets").select("*")
             const allocateData = data?.filter((el) => el?.status === "allocated")
             const allocateinsertdata: any = [];
-  
+
             allocatedEmp?.map((elobj) =>{
                allocateData?.map((asset) =>{
                 if(asset?.modelNo === elobj?.modelNo){
@@ -437,10 +454,17 @@ router.post(
                 }
               })
             })
-                        
+
               await db("assetallocation").insert(allocateinsertdata as any)
-                      
-              res.status(200).json({ message: "Assets added Successfully!" });   
+              res.status(200).json({ message: "Assets added Successfully!" })
+            } else{
+              await db<Asset>('assets')
+              .insert((refineAssets as unknown) as Asset)
+              
+                res.status(200).json({ message: 'Assets added Successfully!' })
+              
+            }
+
           } catch(error: any){
             if(error?.code === "ER_DUP_ENTRY" ){
               res.status(400).json({
