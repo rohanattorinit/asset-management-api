@@ -3,7 +3,6 @@ import express, { Request, Response } from "express";
 const router = express.Router();
 import db from "../config/connection";
 import moment from "moment";
-import { sendMail } from "../utils/sendEmail";
 
 interface Ticket {
   ticketId?: number;
@@ -33,28 +32,10 @@ router.post("/createTicket", isAuth, async (req: Request, res: Response) => {
     ticketStatus: "active",
     createdAt: moment().format("YYYY-MM-DD HH:mm:ss"),
   };
-
-  const mailOptions = {
-    from: "mahesh.bhadane@torinit.ca",
-    to: "rohan.desai@torinit.ca",
-    subject: "New Ticket Created",
-    html: `
-        <div style="padding:10px;border-style: ridge">
-        <h3>New Ticket has been raised.</h3>
-        <p>Ticket Details:</p>
-        <ul>
-            <li>EmpId: ${ticket.empId}</li>
-            <li>AssetId: ${ticket.assetId}</li>
-            <li>Title: ${ticket.title}</li>
-            <li>Description: ${ticket.description}</li>
-        </ul>`,
-  };
-
   db<Ticket>("tickets")
     .insert(ticket)
     .then(() => {
       res.status(200).json({ message: "Ticket created Successfully!" });
-      sendMail(mailOptions);
     })
     .catch((error) => res.status(400).json({ error }));
 });
