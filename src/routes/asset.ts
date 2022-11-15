@@ -386,6 +386,22 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
   }
 })
 
+const exists= async (key: string, value: any)=> {
+  try{
+      const res = await db.first(
+        db.raw(
+          'exists ? as present',
+          db('employees').select(`${key}`).where(`${key}`, '=', value).limit(1)
+        )
+      );
+    
+      return res.present === 1;
+  }catch(err) {
+    console.log(err)
+  }
+  
+}
+
 //add bulk assets
 router.post(
   "/create-bulk",
@@ -400,17 +416,24 @@ router.post(
         .on("data", (data: Asset) => results.push(data))
         .on("end", async () => {
           try{
-            const allAssets = results.map(async (result: any) => {
-              return await db("brands")
-                .select("brandId")
-                .where("name", "=", result.brandName)
-                .then((data) => {
-                  delete result["brandName"];
-                  result.brandId = data[0].brandId;
-                  result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
-  
-                  return result;
-                });
+                const allAssets = results.map(async(result: any) => {
+                const data = await db("brands")
+                 .select("brandId")
+                 .where("name", "=", result.brandName)
+                   delete result["brandName"];
+                   result.brandId = data[0].brandId;
+                   result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");       
+             
+                   if(result?.status === "allocated"){
+                   const exist = await exists("empId" ,result?.empId)
+                    if(exist){
+                     return result;
+                   } else{
+                    throw new Error( `"${result?.name} " asset doesn't have valid empId`)
+                   }
+                   }else {
+                     return result;
+                   }                    
             });
   
             const resAssets: Asset[] = await Promise.all(allAssets)
@@ -424,17 +447,11 @@ router.post(
                   }
                   return obj
                 }
-  
               })
-  
-             const refineAssets =  resAssets.map((asset) => {
-                  delete asset?.empId
-                  return asset
-              })
-            
-
-            if(allocatedEmp[0]?.empId){
-
+            const refineAssets = resAssets?.map((asset) => {
+              delete asset?.empId
+              return asset
+            })
 
             await db<Asset>("assets").insert(refineAssets as unknown as Asset)
                   
@@ -456,14 +473,7 @@ router.post(
             })
 
               await db("assetallocation").insert(allocateinsertdata as any)
-              res.status(200).json({ message: "Assets added Successfully!" })
-            } else{
-              await db<Asset>('assets')
-              .insert((refineAssets as unknown) as Asset)
-              
-                res.status(200).json({ message: 'Assets added Successfully!' })
-              
-            }
+              res.status(200).json({ message: "Assets added Successfully!"})
 
           } catch(error: any){
             if(error?.code === "ER_DUP_ENTRY" ){
@@ -473,7 +483,7 @@ router.post(
               })
             } else {
               res.status(400).json({
-                error
+                error: `${error}`
               })
             }
             
