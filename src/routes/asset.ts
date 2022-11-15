@@ -30,9 +30,9 @@ interface Asset {
 
   processor: string;
   screen_type: string;
-  ram: number;
+  ram: string;
   operating_system: string;
-  screen_size: number;
+  screen_size: string;
   asset_location: string;
   addedTime: string;
   isRented?: boolean;
@@ -43,6 +43,27 @@ interface Asset {
   rentEndDate?: string;
 }
 
+interface UpdateAssetType {
+  name?: string
+  modelNo?: string
+  description?: string
+  status?: 'allocated' | 'surplus' | 'broken' | 'repairable'
+  // usability?: 'usable' | 'unusable' | 'disposed'
+  asset_location: string
+  isRented: boolean
+  vendor?: string
+  rent?: number
+  deposit?: number
+  rentStartDate?: string
+  rentEndDate?: string
+  received_date?: string
+  ram?: string
+  processor?: string
+  screen_type?: string
+  operating_system?: string
+  screen_size?: string
+}
+
 interface Filters {
   fieldId?: number;
   fields: string;
@@ -51,12 +72,21 @@ interface Filters {
 
 //get all assets
 router.get("/", async (req, res: Response) => {
-  const { name } = req?.query;
+  const { name,isRented,allocate } = req?.query;
+  console.log(req.query)
   db<Asset>("assets")
     .select("*")
     .where("is_active", true)
+    .modify((queryBuilder) => {
+      if (allocate === "true") {
+        queryBuilder?.where("status", `surplus`);
+      }
+      if (isRented === "0" || isRented === "1") {
+        queryBuilder?.where("isRented", "=", `${isRented}`);
+      }})
     .where("name", "like", `%${name}%`)
     .then((data) => {
+      console.log({data})
       res.status(200).json({
         message: "All assets fetched successfully",
         data: data,
@@ -71,6 +101,108 @@ router.get("/", async (req, res: Response) => {
 });
 
 //Filters on assset
+// router.post("/filter", async (req: Request, res: Response) => {
+//   const {
+//     screen_type,
+//     ram,
+//     status,
+//     assetType,
+//     isRented,
+//     category,
+//     operating_system,
+//     processor,
+//     screen_size,
+//     asset_location,
+//   } = req.body;
+//   db<Asset>("assets")
+//     .select("*")
+//     .where("is_active", true)
+//     .modify((queryBuilder) => {
+//       // if (allocate === "true") {
+//       //   queryBuilder?.where("status", `surplus`);
+//       // }
+//       if (isRented === "0" || isRented === "1") {
+//         queryBuilder?.where("isRented", "=", `${isRented}`);
+//       }
+//       if (assetType === "hardware" || assetType === "software") {
+//         queryBuilder?.where("assetType", "=", assetType);
+//       }
+//       if (screen_type?.length > 0) {
+//         queryBuilder?.where(function () {
+//           //@ts-ignore
+//           screen_type?.map((screen) => this.orWhere("screen_type", screen));
+//         });
+//       }
+
+//       if (status?.length > 0) {
+//         queryBuilder?.where(function () {
+//           //@ts-ignore
+//           status?.map((status) => this.orWhere("status", status));
+//         });
+//       }
+
+//       if (operating_system?.length > 0) {
+//         queryBuilder?.where(function () {
+//           //@ts-ignore
+//           operating_system?.map((os) => this.orWhere("operating_system", os));
+//         });
+//       }
+
+//       if (category?.length > 0) {
+//         queryBuilder?.where(function () {
+//           //@ts-ignore
+//           category?.map((categoryoptions) =>
+//             this.orWhere("category", categoryoptions)
+//           );
+//         });
+//       }
+
+//       if (processor?.length > 0) {
+//         queryBuilder?.where(function () {
+//           //@ts-ignore
+//           processor?.map((processoroptions) =>
+//             this.orWhere("processor", processoroptions)
+//           );
+//         });
+//       }
+
+//       if (ram?.length > 0) {
+//         queryBuilder?.where(function () {
+//           //@ts-ignore
+//           ram?.map((ramoptions) => this.orWhere("ram", ramoptions));
+//         });
+//       }
+
+//       if (screen_size?.length > 0) {
+//         queryBuilder?.where(function () {
+//           //@ts-ignore
+//           screen_size?.map((size) => this.orWhere("screen_size", size));
+//         });
+//       }
+
+//       if (asset_location?.length > 0) {
+//         queryBuilder?.where(function () {
+//           //@ts-ignore
+//           asset_location?.map((assetlocation) =>
+//             this.orWhere("asset_location", assetlocation)
+//           );
+//         });
+//       }
+//     })
+//     .then((data) => {
+//       res.status(200).json({
+//         message: "All assets fetched successfully",
+//         data: data,
+//       });
+//     })
+//     .catch((error) => {
+//       res.status(400).json({
+//         error: "Error occured while fetching assets!",
+//         errorMsg: error,
+//       });
+//     });
+// });
+
 router.post("/filter", async (req: Request, res: Response) => {
   const {
     screen_type,
@@ -81,9 +213,11 @@ router.post("/filter", async (req: Request, res: Response) => {
     category,
     operating_system,
     processor,
+    harddisk,
     screen_size,
     asset_location,
   } = req.body;
+  console.log("body",req.body)
   db<Asset>("assets")
     .select("*")
     .where("is_active", true)
@@ -103,21 +237,18 @@ router.post("/filter", async (req: Request, res: Response) => {
           screen_type?.map((screen) => this.orWhere("screen_type", screen));
         });
       }
-
       if (status?.length > 0) {
         queryBuilder?.where(function () {
           //@ts-ignore
           status?.map((status) => this.orWhere("status", status));
         });
       }
-
       if (operating_system?.length > 0) {
         queryBuilder?.where(function () {
           //@ts-ignore
           operating_system?.map((os) => this.orWhere("operating_system", os));
         });
       }
-
       if (category?.length > 0) {
         queryBuilder?.where(function () {
           //@ts-ignore
@@ -126,7 +257,6 @@ router.post("/filter", async (req: Request, res: Response) => {
           );
         });
       }
-
       if (processor?.length > 0) {
         queryBuilder?.where(function () {
           //@ts-ignore
@@ -135,21 +265,18 @@ router.post("/filter", async (req: Request, res: Response) => {
           );
         });
       }
-
       if (ram?.length > 0) {
         queryBuilder?.where(function () {
           //@ts-ignore
           ram?.map((ramoptions) => this.orWhere("ram", ramoptions));
         });
       }
-
       if (screen_size?.length > 0) {
         queryBuilder?.where(function () {
           //@ts-ignore
           screen_size?.map((size) => this.orWhere("screen_size", size));
         });
       }
-
       if (asset_location?.length > 0) {
         queryBuilder?.where(function () {
           //@ts-ignore
@@ -194,7 +321,14 @@ router.get(
       "assets.rent",
       "assets.deposit",
       "assets.rentStartDate",
-      "assets.rentEndDate"
+      "assets.rentEndDate",
+      "assets.processor",
+      'assets.screen_type',
+      'assets.category',
+      'assets.ram',
+      'assets.operating_system',
+      'assets.screen_size',
+      'assets.received_date'
     )
       .from("assets")
       .join("brands", "assets.brandId", "=", "brands.brandId")
@@ -218,7 +352,14 @@ router.get(
             "assets.rent",
             "assets.deposit",
             "assets.rentStartDate",
-            "assets.rentEndDate"
+            "assets.rentEndDate",
+            'assets.processor',
+            'assets.screen_type',
+            'assets.category',
+            'assets.ram',
+            'assets.operating_system',
+            'assets.screen_size',
+            'assets.received_date'
           )
             .from("assets")
             .join("brands", "assets.brandId", "=", "brands.brandId")
@@ -425,6 +566,100 @@ router.post(
   }
 );
 
+
+//update assets
+router.post('/update/:id', isAuth, async (req: Request, res: Response) => {
+  const {
+    assetName,
+    modelNo,
+    description,
+    status,
+    //usability,
+    brandName,
+    isRented,
+    vendor,
+    rent,
+    deposit,
+    rentStartDate,
+    rentEndDate,
+    asset_location,
+    ram,
+    processor,
+    screen_type,
+    operating_system,
+    screen_size,
+    received_date
+
+    //rentEndDate
+    //received_date
+  } = req.body
+  const { id } = req.params
+
+  const asset: UpdateAssetType = {
+    name: assetName,
+    modelNo,
+    description,
+    status,
+    //usability,
+    isRented,
+    vendor,
+    rent,
+    asset_location,
+    deposit,
+    rentStartDate,
+    rentEndDate,
+    received_date,
+    ram,
+    processor,
+    screen_type,
+    operating_system,
+    screen_size
+  }
+
+  try {
+    db<Asset>('assets')
+      .where('assetId', id)
+      .update(asset)
+      .then(data => {
+        if (brandName) {
+          db('brands')
+            .select('brandId')
+            .where('name', brandName)
+            .first()
+            .then(data => {
+              db<Asset>('assets')
+                .update({ brandId: data.brandId })
+                .where('assetId', id)
+                .catch(err =>
+                  res.status(400).json({
+                    error:
+                      'Error occured while updating Brand Name of the asset',
+                    errorMsg: err
+                  })
+                )
+            })
+            .catch(err =>
+              res.status(400).json({
+                error: 'Error occured while updating Brand Name of the asset',
+                errorMsg: err
+              })
+            )
+        }
+        res.status(200).json({ message: 'Asset Updated successfully!' })
+      })
+      .catch(error => {
+        res.status(400).json({
+          error: 'An error occured while trying to edit the asset',
+          errorMsg: error
+        })
+      })
+  } catch (error) {
+    res.status(400).json({
+      error: 'An error occured while trying to edit the asset',
+      errorMsg: error
+    })
+  }
+})
 // //update assets
 // router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
 //   const {
