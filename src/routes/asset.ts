@@ -388,6 +388,7 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
 
 const exists= async (key: string, value: any)=> {
   try{
+    if(key === "empId"){
       const res = await db.first(
         db.raw(
           'exists ? as present',
@@ -396,6 +397,19 @@ const exists= async (key: string, value: any)=> {
       );
     
       return res.present === 1;
+    } else if(key === "modelNo"){
+      const res = await db.first(
+        db.raw(
+          'exists ? as present',
+          db('assets').select(`${key}`).where(`${key}`, '=', value).limit(1)
+        )
+      );
+    
+      return res.present === 0;
+    }  else {
+      return false
+    } 
+    
   }catch(err) {
     console.log(err)
   }
