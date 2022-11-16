@@ -269,7 +269,7 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
       received_date,
       empId
     } = req.body
-
+   
     
     if (isRented) {
       
@@ -353,6 +353,8 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
     }
 
     await db('assetallocation').insert(allocateObj)
+  } else {
+    await db<Asset>('assets').insert(asset)
   }
 
     res.status(200).json({
@@ -365,6 +367,7 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
         errorMsg: error,
       })
     } else {
+      console.log(error)
       res.status(400).json({
         error
       })
