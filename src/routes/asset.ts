@@ -44,6 +44,8 @@ interface Asset {
   empId?: string;
   hdd?: string;
   connectivity?: string;
+  ssd?: string;
+  cable_type?: string;
 }
 
 interface Filters {
@@ -78,7 +80,9 @@ router.get("/", async (req, res: Response) => {
       "assets.addedTime",
       "assets.hdd",
       "assets.category",
-      "assets.connectivity"
+      "assets.connectivity",
+      "assets.ssd",
+      "assets.cable_type"
     )
     .join("brands", "assets.brandId", "=", "brands.brandId")
     .where("is_active", true)
@@ -117,6 +121,8 @@ router.post("/filter", async (req: Request, res: Response) => {
     connectivity,
     screen_size,
     asset_location,
+    ssd,
+    cable_type,
   } = req.body;
   db<Asset>("assets")
     .select(
@@ -141,7 +147,9 @@ router.post("/filter", async (req: Request, res: Response) => {
       "assets.addedTime",
       "assets.hdd",
       "assets.category",
-      "assets.connectivity"
+      "assets.connectivity",
+      "assets.ssd",
+      "assets.cable_type"
     )
     .join("brands", "assets.brandId", "=", "brands.brandId")
     .where("is_active", true)
@@ -178,6 +186,18 @@ router.post("/filter", async (req: Request, res: Response) => {
         queryBuilder?.where(function () {
           //@ts-ignore
           hdd?.map((hdd) => this.orWhere("hdd", hdd));
+        });
+      }
+      if (ssd?.length > 0) {
+        queryBuilder?.where(function () {
+          //@ts-ignore
+          ssd?.map((ssd) => this.orWhere("ssd", ssd));
+        });
+      }
+      if (cable_type?.length > 0) {
+        queryBuilder?.where(function () {
+          //@ts-ignore
+          hdd?.map((hdd) => this.orWhere("cable_type", cable_type));
         });
       }
       if (connectivity?.length > 0) {
@@ -273,7 +293,9 @@ router.get(
       "assets.addedTime",
       "assets.hdd",
       "assets.category",
-      "assets.connectivity"
+      "assets.connectivity",
+      "assets.ssd",
+      "assets.cable_type"
     )
       .from("assets")
       .join("brands", "assets.brandId", "=", "brands.brandId")
@@ -305,7 +327,9 @@ router.get(
             "assets.addedTime",
             "assets.hdd",
             "assets.category",
-            "assets.connectivity"
+            "assets.connectivity",
+            "assets.ssd",
+            "assets.cable_type"
           )
             .from("assets")
             .join("brands", "assets.brandId", "=", "brands.brandId")
@@ -385,6 +409,8 @@ router.post("/addAsset", async (req, res) => {
       operating_system,
       screen_size,
       hdd,
+      ssd,
+      cable_type,
       isRented,
       asset_location,
       vendor,
@@ -416,6 +442,8 @@ router.post("/addAsset", async (req, res) => {
           status: "surplus",
           processor,
           hdd,
+          ssd,
+          cable_type,
           screen_type,
           ram,
           operating_system,
@@ -439,6 +467,8 @@ router.post("/addAsset", async (req, res) => {
           modelNo,
           isRented,
           hdd,
+          ssd,
+          cable_type,
           description,
           status: "surplus",
           processor,
