@@ -42,7 +42,7 @@ interface Asset {
   rentStartDate?: string;
   rentEndDate?: string;
   empId?: string;
-  harddisk?: string;
+  hdd?: string;
   connectivity?: string;
 }
 
@@ -76,7 +76,7 @@ router.get("/", async (req, res: Response) => {
       "assets.operating_system",
       "assets.screen_size",
       "assets.addedTime",
-      "assets.harddisk",
+      "assets.hdd",
       "assets.category",
       "assets.connectivity"
     )
@@ -113,7 +113,7 @@ router.post("/filter", async (req: Request, res: Response) => {
     category,
     operating_system,
     processor,
-    harddisk,
+    hdd,
     connectivity,
     screen_size,
     asset_location,
@@ -139,19 +139,16 @@ router.post("/filter", async (req: Request, res: Response) => {
       "assets.operating_system",
       "assets.screen_size",
       "assets.addedTime",
-      "assets.harddisk",
+      "assets.hdd",
       "assets.category",
       "assets.connectivity"
     )
     .join("brands", "assets.brandId", "=", "brands.brandId")
     .where("is_active", true)
     .modify((queryBuilder) => {
-      // if (isRented === "0" || isRented === "1") {
-      //   queryBuilder?.where("isRented", "=", `${isRented}`);
+      // if (assetType === "hardware" || assetType === "software") {
+      //   queryBuilder?.where("assetType", "=", assetType);
       // }
-      if (assetType === "hardware" || assetType === "software") {
-        queryBuilder?.where("assetType", "=", assetType);
-      }
       if (screen_type?.length > 0) {
         queryBuilder?.where(function () {
           //@ts-ignore
@@ -177,10 +174,10 @@ router.post("/filter", async (req: Request, res: Response) => {
           operating_system?.map((os) => this.orWhere("operating_system", os));
         });
       }
-      if (harddisk?.length > 0) {
+      if (hdd?.length > 0) {
         queryBuilder?.where(function () {
           //@ts-ignore
-          harddisk?.map((hdd) => this.orWhere("harddisk", hdd));
+          hdd?.map((hdd) => this.orWhere("hdd", hdd));
         });
       }
       if (connectivity?.length > 0) {
@@ -274,7 +271,7 @@ router.get(
       "assets.operating_system",
       "assets.screen_size",
       "assets.addedTime",
-      "assets.harddisk",
+      "assets.hdd",
       "assets.category",
       "assets.connectivity"
     )
@@ -306,7 +303,7 @@ router.get(
             "assets.operating_system",
             "assets.screen_size",
             "assets.addedTime",
-            "assets.harddisk",
+            "assets.hdd",
             "assets.category",
             "assets.connectivity"
           )
@@ -387,7 +384,7 @@ router.post("/addAsset", async (req, res) => {
       ram,
       operating_system,
       screen_size,
-      harddisk,
+      hdd,
       isRented,
       asset_location,
       vendor,
@@ -418,7 +415,7 @@ router.post("/addAsset", async (req, res) => {
           description,
           status: "surplus",
           processor,
-          harddisk,
+          hdd,
           screen_type,
           ram,
           operating_system,
@@ -441,7 +438,7 @@ router.post("/addAsset", async (req, res) => {
           category,
           modelNo,
           isRented,
-          harddisk,
+          hdd,
           description,
           status: "surplus",
           processor,
@@ -567,9 +564,10 @@ router.post(
 );
 
 //filter options
-router.get("/filterOptions", async (req:Request, res: Response) => {
-  const {category,status,asset_location}=req.params;
-  db.select("*") 
+router.get("/filterOptions", async (req: Request, res: Response) => {
+  const { category, status, asset_location } = req.params;
+  const filter = await db
+    .select("*")
     .from("filters")
     .then((data) => {
       const result = data.reduce(function (r, a) {

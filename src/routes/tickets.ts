@@ -36,18 +36,26 @@ router.post("/createTicket", isAuth, async (req: Request, res: Response) => {
 
   const mailOptions = {
     from: "mahesh.bhadane@torinit.ca",
-    to: "maheshbhadane708@gmail.com",
+    to: "msbhadane708@gmail.com",
     subject: "New Ticket Created",
-    html: `
-        <div style="padding:10px;border-style: ridge">
-        <h3>New Ticket has been raised.</h3>
+    html: `    
+<div style="padding:30px;border-style: ridge;width:500px; height:500px ; margin-left:auto;margin-right:auto;">
+<center><a href="#default" class="logo">Asset Management App</a></center>
+
+
+        <center><h2><u>New Ticket has been raised</u></h2></center>
+        <p><b>Hi Admin,</b><br>
+        New Ticket has been raised.</p>
         <p>Ticket Details:</p>
         <ul>
             <li>EmpId: ${ticket.empId}</li>
             <li>AssetId: ${ticket.assetId}</li>
             <li>Title: ${ticket.title}</li>
             <li>Description: ${ticket.description}</li>
-        </ul>`,
+        </ul>
+        
+<center><img src="logo.png" alt="Torinit Technologies Inc.
+"></center>`,
   };
 
   db<Ticket>("tickets")
