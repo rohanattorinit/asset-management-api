@@ -19,8 +19,8 @@ router.post(
     assetallocation.map((asset: { empId: string; assetId: number }) => {
       db("assets")
         .update({ status: "allocated" })
-        .where("assetId", asset.assetId)
-        .catch((error) => res.status(400).json({ error }));
+        .where("assetId", asset?.assetId)
+        .catch((error) => res.status(400).json({ error:`Error occured while trying to allocate asset: ${asset?.assetId}` }));
     });
     db("assetallocation")
       .insert(assetallocation)
@@ -44,7 +44,7 @@ router.post(
       .del()
       .then(() => {
         db("assets")
-          .update({ status: "available" })
+          .update({ status: "surplus" })
           .where("assetId", assetId)
           .then(() => {
             res

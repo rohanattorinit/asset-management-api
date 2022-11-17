@@ -22,7 +22,7 @@ router.get(
         const allocation_logs = await db('transaction_history').select("emp_id","emp_name","allocation_date as allocated_at","deallocation_date as deallocated_at")
                                 .where('asset_id',assetId)
         const {received_at,deleted_at} = await db('assets').select("received_date as received_at","deleted_at").where('assetId',assetId).first()
-        const response = {
+        const data = {
             asset_updation_logs: asset_updation_logs,
             ticket_logs:ticket_logs,
             allocation_logs:allocation_logs,
@@ -31,7 +31,7 @@ router.get(
         }
         res.status(200).json({
             message: `Logs fetched successfully for assetId ${assetId}`,
-            data: response,
+             data
           });
       } catch (error) {
         res.status(400).json({error: "Error while fetching transaction logs!",errorMsg:error})

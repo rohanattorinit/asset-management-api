@@ -378,7 +378,7 @@ router.post("/filter", async (req: Request, res: Response) => {
 //get all details of a single asset
 router.get(
   "/singleAsset/:assetId",
-  isAuth,
+  
   async (req: Request, res: Response) => {
     const { assetId } = req.params;
     if (!assetId) res.status(400).json({ error: "Asset Id is missing!" });
@@ -389,22 +389,14 @@ router.get(
       "assets.description",
       "assets.modelNo",
       "assets.status",
+      //"assets.usability",
       "assets.asset_location",
       "assets.isRented",
       "assets.vendor",
       "assets.rent",
       "assets.deposit",
       "assets.rentStartDate",
-      "assets.rentEndDate",
-      "assets.processor",
-      "assets.screen_type",
-      "assets.ram",
-      "assets.operating_system",
-      "assets.screen_size",
-      "assets.addedTime",
-      "assets.harddisk",
-      "assets.category",
-      "assets.connectivity"
+      "assets.rentEndDate"
     )
       .from("assets")
       .join("brands", "assets.brandId", "=", "brands.brandId")
@@ -419,6 +411,7 @@ router.get(
             "assets.description",
             "assets.modelNo",
             "assets.status",
+            //"assets.usability",
             "employees.empId",
             "employees.name as empName",
             "assets.asset_location",
@@ -427,16 +420,7 @@ router.get(
             "assets.rent",
             "assets.deposit",
             "assets.rentStartDate",
-            "assets.rentEndDate",
-            "assets.processor",
-            "assets.screen_type",
-            "assets.ram",
-            "assets.operating_system",
-            "assets.screen_size",
-            "assets.addedTime",
-            "assets.harddisk",
-            "assets.category",
-            "assets.connectivity"
+            "assets.rentEndDate"
           )
             .from("assets")
             .join("brands", "assets.brandId", "=", "brands.brandId")
@@ -749,7 +733,7 @@ router.post("/delete/:assetId", async (req: Request, res: Response) => {
 // Get count for pie charts
 router.get("/categoryCount", async (req:Request, res: Response) => {
   try {
-    console.log(req)
+    // console.log(req)
     // get total count of all categories of assets
     const totalCount = await db.select('category').from('assets').count('* as count').groupBy('category');
     
@@ -766,6 +750,35 @@ router.get("/categoryCount", async (req:Request, res: Response) => {
   }
   
 });
+
+//Delete Asset 
+router.post('/delete/:assetId', async (req: Request, res: Response) => {
+  const { assetId } = req?.params
+  db('assetallocation')
+    .where('assetId', assetId)
+    .del()
+    .then(() => {
+      db('assets')
+        .where('assetId', assetId)
+        .update({ is_active: false })
+        .then(() =>
+          res.status(200).json({ message: 'Asset Deleted successfully!' })
+        )
+        .catch(err =>
+          res.status(400).json({
+            error: 'An error occured while trying to delete the asset',
+            errorMsg: err
+          })
+        )
+    })
+    .catch(err =>
+      res.status(400).json({
+        error: 'An error occured while trying to delete the asset',
+        errorMsg: err
+      })
+    )
+})
+
 
 
 export default router;

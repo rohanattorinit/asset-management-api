@@ -213,4 +213,27 @@ router.post("/delete/:id", async (req: Request, res: Response) => {
         });
     });
 });
+
+//Delete Employee
+
+//delete an employee
+router.post("/delete/:id", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  db<EmployeeType>("assetallocation")
+    .where("empId", id)
+    .del()
+    .then(() => {
+      db('employees')
+      .where('empId',id)
+      .update({'is_active':false})
+      .then(()=>res.status(200).json({ message: "Employee Deleted successfully" }))
+      .catch((error) => {
+        res.status(400).json({ error:'An error occured while trying to delete profile',errorMsg:error})
+    })
+    .catch((error) => {
+      res.status(400).json({ error:'An error occured while trying to delete profile',errorMsg:error})
+    })
+})
+})
+
 export default router;
