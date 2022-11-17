@@ -34,7 +34,7 @@ interface Asset {
   operating_system: string;
   screen_size: number;
   asset_location: string;
-  addedTime: string;
+  // addedTime: string;
   isRented?: boolean;
   vendor?: string;
   rent?: number;
@@ -45,7 +45,7 @@ interface Asset {
   hdd?: string;
   connectivity?: string;
   ssd?: string;
-  cable_type?: string;
+  cableType?: string;
 }
 
 interface Filters {
@@ -77,12 +77,12 @@ router.get("/", async (req, res: Response) => {
       "assets.ram",
       "assets.operating_system",
       "assets.screen_size",
-      "assets.addedTime",
+      // "assets.addedTime",
       "assets.hdd",
       "assets.category",
       "assets.connectivity",
       "assets.ssd",
-      "assets.cable_type"
+      "assets.cableType"
     )
     .join("brands", "assets.brandId", "=", "brands.brandId")
     .where("is_active", true)
@@ -122,7 +122,7 @@ router.post("/filter", async (req: Request, res: Response) => {
     screen_size,
     asset_location,
     ssd,
-    cable_type,
+    cableType,
   } = req.body;
 
   try {
@@ -146,12 +146,12 @@ router.post("/filter", async (req: Request, res: Response) => {
         "assets.ram",
         "assets.operating_system",
         "assets.screen_size",
-        "assets.addedTime",
+        // "assets.addedTime",
         "assets.hdd",
         "assets.category",
         "assets.connectivity",
         "assets.ssd",
-        "assets.cable_type"
+        "assets.cableType"
       )
       .join("brands", "assets.brandId", "=", "brands.brandId")
       .where("is_active", true)
@@ -196,10 +196,10 @@ router.post("/filter", async (req: Request, res: Response) => {
             ssd?.map((ssd) => this.orWhere("ssd", ssd));
           });
         }
-        if (cable_type?.length > 0) {
+        if (cableType?.length > 0) {
           queryBuilder?.where(function () {
             //@ts-ignore
-            hdd?.map((hdd) => this.orWhere("cable_type", cable_type));
+            hdd?.map((hdd) => this.orWhere("cableType", cableType));
           });
         }
         if (connectivity?.length > 0) {
@@ -292,12 +292,12 @@ router.get(
       "assets.ram",
       "assets.operating_system",
       "assets.screen_size",
-      "assets.addedTime",
+      // "assets.addedTime",
       "assets.hdd",
       "assets.category",
       "assets.connectivity",
       "assets.ssd",
-      "assets.cable_type"
+      "assets.cableType"
     )
       .from("assets")
       .join("brands", "assets.brandId", "=", "brands.brandId")
@@ -326,12 +326,12 @@ router.get(
             "assets.ram",
             "assets.operating_system",
             "assets.screen_size",
-            "assets.addedTime",
+            // "assets.addedTime",
             "assets.hdd",
             "assets.category",
             "assets.connectivity",
             "assets.ssd",
-            "assets.cable_type"
+            "assets.cableType"
           )
             .from("assets")
             .join("brands", "assets.brandId", "=", "brands.brandId")
@@ -412,7 +412,7 @@ router.post("/addAsset", async (req, res) => {
       screen_size,
       hdd,
       ssd,
-      cable_type,
+      cableType,
       isRented,
       asset_location,
       vendor,
@@ -445,7 +445,7 @@ router.post("/addAsset", async (req, res) => {
           processor,
           hdd,
           ssd,
-          cable_type,
+          cableType,
           screen_type,
           ram,
           operating_system,
@@ -453,7 +453,7 @@ router.post("/addAsset", async (req, res) => {
           //usability,
           asset_location,
 
-          addedTime: moment().format("YYYY-MM-DD HH:mm:ss"),
+          // addedTime: moment().format("YYYY-MM-DD HH:mm:ss"),
           isRented,
           vendor,
           rent,
@@ -470,7 +470,7 @@ router.post("/addAsset", async (req, res) => {
           isRented,
           hdd,
           ssd,
-          cable_type,
+          cableType,
           description,
           status: "surplus",
           processor,
@@ -480,7 +480,7 @@ router.post("/addAsset", async (req, res) => {
           screen_size,
           //usability,
           asset_location,
-          addedTime: moment().format("YYYY-MM-DD HH:mm:ss"),
+          // addedTime: moment().format("YYYY-MM-DD HH:mm:ss"),
         };
     db<Asset>("assets")
       .insert(asset)
@@ -529,7 +529,7 @@ router.post(
                 .then((data) => {
                   delete result["brandName"];
                   result.brandId = data[0].brandId;
-                  result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
+                  // result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
 
                   return result;
                 });
@@ -542,7 +542,7 @@ router.post(
                 const obj = {
                   empId: asset?.empId,
                   modelNo: asset?.modelNo,
-                  allocationTime: asset?.addedTime,
+                  // allocationTime: asset?.addedTime,
                 };
                 return obj;
               }
@@ -567,7 +567,7 @@ router.post(
                   const allocationobj = {
                     empId: elobj?.empId,
                     assetId: asset?.assetId,
-                    allocationTime: elobj?.allocationTime,
+                    // allocationTime: elobj?.allocationTime,
                   };
                   alocateinsertdata.push(allocationobj);
                 }
