@@ -17,7 +17,6 @@ interface Asset {
   modelNo: string
   description: string
   status: 'allocated' | 'surplus' | 'broken' | 'repairable'
-  //usability: "usable" | "unusable" | "disposed";
   is_active?: boolean
   processor?: string
   screen_type?: string
@@ -25,7 +24,7 @@ interface Asset {
   operating_system?: string
   screen_size?: string
   asset_location?: string
-  addedTime?: string
+  allocationTime?: string
   isRented?: boolean
   vendor?: string
   rent?: number
@@ -41,6 +40,7 @@ interface Asset {
   make_year:number
   connectivity?: 'wired' | 'wireless'
   cableType?: string
+  
 }
 
 interface UpdateAssetType {
@@ -202,13 +202,13 @@ router.get(
             'assets.operating_system',
             'assets.screen_size',
             'assets.received_date',
-            'assets.ssd',
-      'assets.hdd',
-      'assets.os_version',
-      'assets.imeiNo',
-      'assets.make_year',
-      'assets.connectivity',
-      'assets.cableType'
+             'assets.ssd',
+            'assets.hdd',
+            'assets.os_version',
+             'assets.imeiNo',
+             'assets.make_year',
+             'assets.connectivity',
+            'assets.cableType'
           )
             .from('assets')
             .join('brands', 'assets.brandId', '=', 'brands.brandId')
@@ -303,7 +303,8 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
       imeiNo,
       make_year,
       connectivity,
-      cableType
+      cableType,
+      allocationTime
 
 
     } = req.body
@@ -336,7 +337,7 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
           screen_size,
           operating_system,
           asset_location,
-          addedTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+          // addedTime: moment().format('YYYY-MM-DD HH:mm:ss'),
           isRented,
           vendor,
           rent,
@@ -368,7 +369,7 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
           screen_size,
           operating_system,
           asset_location,
-          addedTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+          // addedTime: moment().format('YYYY-MM-DD HH:mm:ss'),
           ssd,
           hdd,
           os_version,
@@ -391,7 +392,7 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
     const allocateObj = {
       empId: empId,
       assetId: id?.assetId,
-      allocationtime: asset?.addedTime
+      allocationtime: allocationTime
     }
 
     await db('assetallocation').insert(allocateObj)
@@ -439,7 +440,7 @@ router.post(
                 .then((data) => {
                   delete result["brandName"];
                   result.brandId = data[0].brandId;
-                  result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
+                  // result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
                   return result;
                 });
             });
@@ -450,7 +451,7 @@ router.post(
                   const obj = {
                     empId: asset?.empId,
                     modelNo: asset?.modelNo,
-                    allocationTime: asset?.addedTime
+                    allocationTime: asset?.allocationTime
                   }
                   return obj
                 }
