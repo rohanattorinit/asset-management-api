@@ -596,45 +596,96 @@ router.post(
 );
 
 //filter options
-router.get("/filterOptions/:category", async (req: Request, res: Response) => {
-  const { category, status, asset_location } = req.params;
+router.get("/filterOptions/", async (req: Request, res: Response) => {
+  const { category, status, asset_location } = req.query;
 
   try {
-    // get all brands whose category is mobile
-    const brands = await db("brands")
-      .select("name as brandName")
-      .join(
-        "filtercategories",
-        "filtercategories.filter_categories_id",
-        "brands.filter_categories_id"
-      )
-      .where("filtercategories.categories", category);
-    
-    let filterOptions = await db("filters")
-      .select("fields", "filter_name")
-      .join(
-        "filtercategories",
-        "filtercategories.filter_categories_id",
-        "filters.filter_categories_id"
-      )
-      .where("filtercategories.categories", "common")
-      .orWhere("filtercategories.categories", category);
-    
-    const brandsArr = brands?.map((brand) => {
-      return { fields: brand.brandName, filter_name: "brandName" };
-    });
+    // condition for all filteroptions
+    //@ts-ignore
+    if (!category) {
+      // get all brands whose category is mobile
+      const brands = await db("brands").select("name as brandName");
 
-    filterOptions = [...filterOptions, ...brandsArr];
-    const result = filterOptions?.reduce(function (r, a) {
-      r[a.filter_name] = r[a.filter_name] || [];
-      r[a.filter_name].push(a.fields);
-      return r;
-    }, Object.create(null));
+      let filterOptions = await db("filters").select("fields", "filter_name");
 
-    res.status(200).json({
-      message: `Filter options fetched successfully`,
-      data: result,
-    });
+      const brandsArr = brands?.map((brand) => {
+        return { fields: brand.brandName, filter_name: "brandName" };
+      });
+
+      filterOptions = [...filterOptions, ...brandsArr];
+
+      const result = filterOptions?.reduce(function (r, a) {
+        r[a.filter_name] = r[a.filter_name] || [];
+        r[a.filter_name].push(a.fields);
+        return r;
+      }, Object.create(null));
+
+      res.status(200).json({
+        message: `Filter options fetched successfully`,
+        data: result,
+      });
+    } else {
+      // get all brands whose category is mobile
+      const brands = await db("brands")
+        .select("name as brandName")
+        .join(
+          "filtercategories",
+          "filtercategories.filter_categories_id",
+          "brands.filter_categories_id"
+        )
+        .modify((queryBuilder) => {
+          queryBuilder?.where(function () {
+            if (typeof category === "string") {
+              //@ts-ignore
+              this.orWhere("filtercategories.categories", category);
+            } else {
+              //@ts-ignore
+              category?.map((category) =>
+                this.orWhere("filtercategories.categories", category)
+              );
+            }
+          });
+        });
+
+      let filterOptions = await db("filters")
+        .select("fields", "filter_name")
+        .join(
+          "filtercategories",
+          "filtercategories.filter_categories_id",
+          "filters.filter_categories_id"
+        )
+        .modify((queryBuilder) => {
+          queryBuilder?.where(function () {
+            this.orWhere("filtercategories.categories", "common");
+            if (typeof category === "string") {
+              //@ts-ignore
+              this.orWhere("filtercategories.categories", category);
+            } else {
+              //@ts-ignore
+              category?.map((category) =>
+                this.orWhere("filtercategories.categories", category)
+              );
+            }
+          });
+        });
+
+      const brandsArr = brands?.map((brand: any) => {
+        return { fields: brand.brandName, filter_name: "brandName" };
+      });
+      filterOptions = [...filterOptions, ...brandsArr];
+      //@ts-ignore
+      const result = filterOptions?.reduce(function (r, a) {
+        r[a.filter_name] = r[a.filter_name] || [];
+        r[a.filter_name].push(a.fields);
+        return r;
+      }, Object.create(null));
+      res.status(200).json({
+        message: `Filter options fetched successfully`,
+        data: result,
+      });
+    }
+
+    // console.log(filterOptions, brands);
   } catch (error) {
     res.status(400).json({
       error: "Error occured whie trying to fetch filter options!",
