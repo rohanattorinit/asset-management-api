@@ -82,11 +82,44 @@ interface Filters {
 
 //get all assets
 router.get("/", async (req, res: Response) => {
-  const { name } = req?.query;
+  const { name,isRented,allocate } = req?.query;
+  
   db<Asset>("assets")
-    .select("*")
+    .select(
+      "assets.assetId",
+      "brands.name as brandName",
+      "assets.name",
+      "assets.description",
+      "assets.modelNo",
+      "assets.status",
+      "assets.asset_location",
+      "assets.isRented",
+      "assets.vendor",
+      "assets.rent",
+      "assets.deposit",
+      "assets.rentStartDate",
+      "assets.rentEndDate",
+      "assets.processor",
+      "assets.screen_type",
+      "assets.ram",
+      "assets.operating_system",
+      "assets.screen_size",
+      "assets.addedTime",
+      "assets.hdd",
+      "assets.ssd",
+      "assets.category",
+      "assets.connectivity"
+    )
+    .join("brands", "assets.brandId", "=", "brands.brandId")
     .where("is_active", true)
-    .where("name", "like", `%${name}%`)
+    .modify((queryBuilder) => {
+      if (allocate === "true") {
+        queryBuilder?.where("status", `surplus`);
+      }
+      if (isRented === "0" || isRented === "1") {
+        queryBuilder?.where("isRented", "=", `${isRented}`);
+      }})
+    .where("assets.name", "like", `%${name}%`)
     .then((data) => {
       res.status(200).json({
         message: "All assets fetched successfully",
@@ -100,7 +133,6 @@ router.get("/", async (req, res: Response) => {
       });
     });
 });
-
 //Filters on assset
 router.post("/filter", async (req: Request, res: Response) => {
   const {
@@ -293,7 +325,7 @@ router.get(
             .where('assets.assetId', '=', assetId)
             .first()
             .then(data => {
-              console.log(data?.received_date)
+              //console.log(data?.received_date)
               res.status(200).json({ data: data })
             })
             .catch(error =>
@@ -303,7 +335,7 @@ router.get(
               })
             )
         } else {
-          console.log({data})
+        //  console.log({data})
           res.status(200).json({
             message: `Asset with assetId:${assetId} fetched successfully`,
             data: data
@@ -485,7 +517,7 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
         errorMsg: error,
       })
     } else {
-      console.log(error)
+      //console.log(error)
       res.status(400).json({
         error
       })
