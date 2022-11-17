@@ -62,6 +62,13 @@ interface UpdateAssetType {
   screen_type?: string
   operating_system?: string
   screen_size?: string
+  ssd?: string
+  hdd?: string
+  os_version?: string
+  imeiNo?: string
+  make_year?:number
+  connectivity?:'wired' | 'wireless'
+  cableType?: string
 }
 
 interface Filters {
@@ -139,7 +146,6 @@ router.get(
       'assets.description',
       'assets.modelNo',
       'assets.status',
-      //"assets.usability",
       'assets.asset_location',
       'assets.isRented',
       'assets.vendor',
@@ -153,7 +159,17 @@ router.get(
       'assets.ram',
       'assets.operating_system',
       'assets.screen_size',
-      'assets.received_date'
+      'assets.received_date',
+      'assets.ssd',
+      'assets.hdd',
+      'assets.os_version',
+      'assets.imeiNo',
+      'assets.make_year',
+      'assets.connectivity',
+      'assets.cableType'
+
+     
+      
     )
       .from('assets')
       .join('brands', 'assets.brandId', '=', 'brands.brandId')
@@ -185,7 +201,14 @@ router.get(
             'assets.ram',
             'assets.operating_system',
             'assets.screen_size',
-            'assets.received_date'
+            'assets.received_date',
+            'assets.ssd',
+      'assets.hdd',
+      'assets.os_version',
+      'assets.imeiNo',
+      'assets.make_year',
+      'assets.connectivity',
+      'assets.cableType'
           )
             .from('assets')
             .join('brands', 'assets.brandId', '=', 'brands.brandId')
@@ -506,7 +529,14 @@ router.post('/update/:id', isAuth, async (req: Request, res: Response) => {
     screen_type,
     operating_system,
     screen_size,
-    received_date
+    received_date,
+    ssd,
+    hdd,
+    os_version,
+    imeiNo,
+    make_year,
+    connectivity,
+    cableType
 
     //rentEndDate
     //received_date
@@ -531,7 +561,14 @@ router.post('/update/:id', isAuth, async (req: Request, res: Response) => {
     processor,
     screen_type,
     operating_system,
-    screen_size
+    screen_size,
+    ssd,
+    hdd,
+    os_version,
+    imeiNo,
+    make_year,
+    connectivity,
+    cableType
   }
 
   try {
