@@ -34,6 +34,13 @@ interface Asset {
   rentEndDate?: string
   received_date?: string
   empId?: string
+  ssd?: string
+  hdd?: string
+  os_version?:string
+  imeiNo?: string
+  make_year:number
+  connectivity?: 'wired' | 'wireless'
+  cableType?: string
 }
 
 interface UpdateAssetType {
@@ -253,7 +260,6 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
       modelNo,
       description,
       status,
-      // usability,
       processor,
       screen_type,
       ram,
@@ -267,7 +273,16 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
       rentStartDate,
       rentEndDate,
       received_date,
-      empId
+      empId,
+      ssd,
+      hdd,
+      os_version,
+      imeiNo,
+      make_year,
+      connectivity,
+      cableType
+
+
     } = req.body
    
     
@@ -296,12 +311,7 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
           screen_type,
           ram,
           screen_size,
-          //ram: ram?.length ? parseInt(ram, 10) : undefined,
           operating_system,
-          // screen_size: screen_size?.length
-          //   ? parseInt(screen_size, 10)
-          //   : undefined,
-          //usability,
           asset_location,
           addedTime: moment().format('YYYY-MM-DD HH:mm:ss'),
           isRented,
@@ -310,7 +320,14 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
           deposit,
           rentStartDate,
           rentEndDate,
-          received_date
+          received_date,
+          ssd,
+          hdd,
+          os_version,
+          imeiNo,
+          make_year,
+          connectivity,
+          cableType
         }
       : {
           brandId,
@@ -324,16 +341,18 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
           status,
           processor,
           screen_type,
-          //ram: ram?.length ? parseInt(ram, 10) : undefined,
           ram,
           screen_size,
           operating_system,
-          // screen_size: screen_size?.length
-          //   ? parseInt(screen_size, 10)
-          //   : undefined,
-          // //usability,
           asset_location,
-          addedTime: moment().format('YYYY-MM-DD HH:mm:ss')
+          addedTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+          ssd,
+          hdd,
+          os_version,
+          imeiNo,
+          make_year,
+          connectivity,
+          cableType
         }
         if(empId) {
           
