@@ -78,58 +78,114 @@ interface Filters {
 }
 
 //get all assets
-router.get('/', isAuth, isAdmin, async (req, res: Response) => {
-  const {
-    name,
-    allocate,
-    assetType,
-    isRented,
+// router.get('/', isAuth, isAdmin, async (req, res: Response) => {
+//   const {
+//     name,
+//     allocate,
+//     assetType,
+//     isRented,
  
-    operating_system,
-    processor
-  } = req?.query
-  const { screen_type } = req.body
-  db<Asset>('assets')
-    .select('*')
-    .where('is_active', true)
-    .modify(queryBuilder => {
+//     operating_system,
+//     processor
+//   } = req?.query
+//   const { screen_type } = req.body
+//   db<Asset>('assets')
+//     .select('*')
+//     .where('is_active', true)
+//     .modify(queryBuilder => {
+//       if (allocate === 'true') {
+//         queryBuilder?.where('status', `surplus`)
+//       }
+//       if (isRented === '0' || isRented === '1') {
+//         queryBuilder?.where('isRented', '=', `${isRented}`)
+//       }
+//       if (assetType === 'hardware' || assetType === 'software') {
+//         queryBuilder?.where('assetType', '=', assetType)
+//       }
+//       if (screen_type && screen_type !== 'undefined') {
+//         queryBuilder?.where('screen_type', '=', screen_type)
+//       }
+//       if (operating_system && operating_system !== 'undefined') {
+//         //console.log('data=>', operating_system)
+//         queryBuilder?.where('operating_system', '=', operating_system)
+//       }
+      
+//       if (processor && processor !== 'undefined') {
+//         queryBuilder?.where('processor', '=', processor)
+//       }
+//     })
+//     .where('name', 'like', `%${name}%`)
+//     .then(data => {
+//       // console.log(data)
+      
+//       res.status(200).json({
+//         message: 'All assets fetched successfully',
+//         data: data
+//       })
+//     })
+//     .catch(error => {
+//       res.status(400).json({
+//         error: 'Error occured while fetching assets!',
+//         errorMsg: error
+//       })
+//     })
+// })
+
+//get all assets
+router.get("/", async (req, res: Response) => {
+  const { name, isRented, allocate } = req?.query;
+  db<Asset>("assets")
+    .select(
+      "assets.assetId",
+      "brands.name as brandName",
+      "assets.name",
+      "assets.description", 
+      "assets.modelNo",
+      "assets.status",
+      "assets.asset_location",
+      "assets.isRented",
+      "assets.vendor",
+      "assets.rent",
+      "assets.deposit",
+      "assets.rentStartDate",
+      "assets.rentEndDate",
+      "assets.processor",
+      "assets.screen_type",
+      "assets.ram",
+      "assets.operating_system",
+      "assets.screen_size",
+      // "assets.addedTime",
+      "assets.hdd",
+      "assets.category",
+      "assets.connectivity",
+      "assets.ssd",
+      "assets.cableType"
+    )
+    .join("brands", "assets.brandId", "=", "brands.brandId")
+    .where("is_active", true)
+    .modify((queryBuilder) => {
+
       if (allocate === 'true') {
         queryBuilder?.where('status', `surplus`)
       }
-      if (isRented === '0' || isRented === '1') {
-        queryBuilder?.where('isRented', '=', `${isRented}`)
-      }
-      if (assetType === 'hardware' || assetType === 'software') {
-        queryBuilder?.where('assetType', '=', assetType)
-      }
-      if (screen_type && screen_type !== 'undefined') {
-        queryBuilder?.where('screen_type', '=', screen_type)
-      }
-      if (operating_system && operating_system !== 'undefined') {
-        //console.log('data=>', operating_system)
-        queryBuilder?.where('operating_system', '=', operating_system)
-      }
-      
-      if (processor && processor !== 'undefined') {
-        queryBuilder?.where('processor', '=', processor)
+      if (isRented === "0" || isRented === "1") {
+        queryBuilder?.where("isRented", "=", `${isRented}`);
       }
     })
-    .where('name', 'like', `%${name}%`)
-    .then(data => {
-      // console.log(data)
-      
+    .where("assets.name", "like", `%${name}%`)
+    .then((data) => {
       res.status(200).json({
-        message: 'All assets fetched successfully',
-        data: data
-      })
+        message: "All assets fetched successfully",
+        data: data,
+      });
     })
-    .catch(error => {
+    .catch((error) => {
       res.status(400).json({
-        error: 'Error occured while fetching assets!',
-        errorMsg: error
-      })
-    })
-})
+        error: "Error occured while fetching assets!",
+        errorMsg: error,
+      });
+    });
+});
 
 //get all details of a single asset
 router.get(
@@ -254,7 +310,9 @@ router.get('/employeeAssets/:empId', isAuth, async (req, res) => {
     'assets.name',
     'assets.modelno',
     'assets.category',
-    'assetallocation.allocationTime'
+    'assetallocation.allocationTime',
+    'assets.description'
+
   )
     .from('assetallocation')
     .join('assets', 'assetallocation.assetId', '=', 'assets.assetId')
@@ -418,8 +476,32 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
   }
 })
 
+const exists= async (key: string, value: any)=> {
+  try{
+    if(key === "empId"){
+      const res = await db.first(
+        db.raw(
+          'exists ? as present',
+          db('employees').select(`${key}`).where(`${key}`, '=', value).limit(1)
+        )
+      );
+      return res.present === 1;
+    } else if(key === "modelNo"){
+      const res = await db.first(
+        db.raw(
+          'exists ? as present',
+          db('assets').select(`${key}`).where(`${key}`, '=', value).limit(1)
+        )
+      );
+      return res.present === 0;
+    }  else {
+      return false
+    }
+  }catch(err) {
+    console.log(err)
+  }
+}
 //add bulk assets
-
 router.post(
   "/create-bulk",
   isAuth,
@@ -430,22 +512,31 @@ router.post(
         const results: Asset[] = [];
         fs.createReadStream(req.file?.path!)
         .pipe(csv())
-        .on("data", (data: Asset) => results.push(data))
+        .on("data", (data: Asset) => results?.push(data))
         .on("end", async () => {
           try{
-            const allAssets = results.map(async (result: any) => {
-              return await db("brands")
-                .select("brandId")
-                .where("name", "=", result.brandName)
-                .then((data) => {
-                  delete result["brandName"];
-                  result.brandId = data[0].brandId;
-                  // result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
-                  return result;
-                });
+                const allAssets = results?.map(async(result: any) => {
+                const data = await db("brands")
+                 .select("brandId")
+                 .where("name", "=", result?.brandName)
+                 if(!data?.length){
+                  throw new Error( `Brand: ${result?.brandName} doesn't exist!`)
+                }
+                   delete result["brandName"];
+                   result.brandId = data[0]?.brandId;
+                  if(result?.status === "allocated"){
+                      const exist = await exists("empId" ,result?.empId)
+                        if(exist) {
+                          return result;
+                      } else {
+                          throw new Error( `"${result?.name}" asset doesn't have a valid Employee Id`)
+                      }
+                   }
+                   else {
+                     return result;
+                   }
             });
             const resAssets: Asset[] = await Promise.all(allAssets)
-            
               const allocatedEmp = resAssets?.map((asset) => {
                 if(asset?.status === "allocated"){
                   const obj = {
@@ -456,18 +547,15 @@ router.post(
                   return obj
                 }
               })
-             const refineAssets =  resAssets.map((asset) => {
-                  delete asset?.empId
-                  return asset
-              })
-            
-            if(allocatedEmp[0]?.empId){
-
+            const refineAssets = resAssets?.map((asset) => {
+              delete asset?.empId
+              delete asset?.allocationTime
+              return asset
+            })
             await db<Asset>("assets").insert(refineAssets as unknown as Asset)
             const data = await  db<Asset>("assets").select("*")
             const allocateData = data?.filter((el) => el?.status === "allocated")
-            const alocateinsertdata: any = [];
-            
+            const allocateinsertdata: any = [];
             allocatedEmp?.map((elobj) =>{
                allocateData?.map((asset) =>{
                 if(asset?.modelNo === elobj?.modelNo){
@@ -476,19 +564,12 @@ router.post(
                     assetId: asset?.assetId,
                     allocationTime: elobj?.allocationTime
                   }
-                  alocateinsertdata.push(allocationobj)
+                  allocateinsertdata.push(allocationobj)
                 }
               })
             })
-              await db("assetallocation").insert(alocateinsertdata as any)
-              res.status(200).json({ message: "Assets added Successfully!" })
-            } else{
-              await db<Asset>('assets')
-              .insert((refineAssets as unknown) as Asset)
-              
-                res.status(200).json({ message: 'Assets added Successfully!' })
-              
-            }
+              await db("assetallocation").insert(allocateinsertdata as any)
+              res.status(200).json({ message: "Assets added Successfully!"})
           } catch(error: any){
             if(error?.code === "ER_DUP_ENTRY" ){
               res.status(400).json({
@@ -496,15 +577,14 @@ router.post(
                 errorMsg: error,
               })
             } else {
-              console.log({error})
               res.status(400).json({
-                error
+                error: `${error}`
               })
             }
           }
         });
     } catch (error) {
-      res.status(400).json({ error: error });
+      res.status(400).json({ error: "Error while creating adding assets" });
     }
   }
 );
@@ -617,28 +697,28 @@ router.post('/update/:id', isAuth, async (req: Request, res: Response) => {
   }
 })
 
-router.get('/filterOptions', async (_, res: Response) => {
-  db.select('*')
-    .from('filters')
-    .then(data => {
-      const result = data.reduce(function (r, a) {
-        r[a.filter_name] = r[a.filter_name] || []
-        r[a.filter_name].push(a.fields)
-        return r
-      }, Object.create(null))
+// router.get('/filterOptions', async (_, res: Response) => {
+//   db.select('*')
+//     .from('filters')
+//     .then(data => {
+//       const result = data.reduce(function (r, a) {
+//         r[a.filter_name] = r[a.filter_name] || []
+//         r[a.filter_name].push(a.fields)
+//         return r
+//       }, Object.create(null))
 
-      res.status(200).json({
-        message: `Filter options fetched successfully`,
-        data: result
-      })
-    })
-    .catch(error => {
-      res.status(400).json({
-        error: 'Error occured whie trying to fetch filter options!',
-        errorMsg: error
-      })
-    })
-})
+//       res.status(200).json({
+//         message: `Filter options fetched successfully`,
+//         data: result
+//       })
+//     })
+//     .catch(error => {
+//       res.status(400).json({
+//         error: 'Error occured whie trying to fetch filter options!',
+//         errorMsg: error
+//       })
+//     })
+// })
 
 router.post('/delete/:assetId', async (req: Request, res: Response) => {
   const { assetId } = req?.params
@@ -666,5 +746,266 @@ router.post('/delete/:assetId', async (req: Request, res: Response) => {
       })
     )
 })
+
+//Filters on assset
+router.post("/filter", async (req: Request, res: Response) => {
+  const {
+    brands,
+    screen_type,
+    ram,
+    status,
+    assetType,
+    category,
+    operating_system,
+    processor,
+    hdd,
+    connectivity,
+    screen_size,
+    asset_location,
+    ssd,
+    cableType,
+  } = req.body;
+​
+  try {
+    const data = await db<Asset>("assets")
+      .select(
+        "assets.assetId",
+        "brands.name as brandName",
+        "assets.name",
+        "assets.description",
+        "assets.modelNo",
+        "assets.status",
+        "assets.asset_location",
+        "assets.isRented",
+        "assets.vendor",
+        "assets.rent",
+        "assets.deposit",
+        "assets.rentStartDate",
+        "assets.rentEndDate",
+        "assets.processor",
+        "assets.screen_type",
+        "assets.ram",
+        "assets.operating_system",
+        "assets.screen_size",
+        // "assets.addedTime",
+        "assets.hdd",
+        "assets.category",
+        "assets.connectivity",
+        "assets.ssd",
+        "assets.cableType"
+      )
+      .join("brands", "assets.brandId", "=", "brands.brandId")
+      .where("is_active", true)
+      .modify((queryBuilder) => {
+        // if (assetType === "hardware" || assetType === "software") {
+        //   queryBuilder?.where("assetType", "=", assetType);
+        // }
+        if (screen_type?.length > 0) {
+          queryBuilder?.where(function () {
+            //@ts-ignore
+            screen_type?.map((screen) => this.orWhere("screen_type", screen));
+          });
+        }
+        if (brands?.length > 0) {
+          queryBuilder?.where(function () {
+            //@ts-ignore
+            brands?.map((brand) => this.orWhere("brands.name", brand));
+          });
+        }
+        if (status?.length > 0) {
+          queryBuilder?.where(function () {
+            //@ts-ignore
+            status?.map((status) => this.orWhere("status", status));
+          });
+        }
+​
+        if (operating_system?.length > 0) {
+          queryBuilder?.where(function () {
+            //@ts-ignore
+            operating_system?.map((os) => this.orWhere("operating_system", os));
+          });
+        }
+        if (hdd?.length > 0) {
+          queryBuilder?.where(function () {
+            //@ts-ignore
+            hdd?.map((hdd) => this.orWhere("hdd", hdd));
+          });
+        }
+        if (ssd?.length > 0) {
+          queryBuilder?.where(function () {
+            //@ts-ignore
+            ssd?.map((ssd) => this.orWhere("ssd", ssd));
+          });
+        }
+        if (cableType?.length > 0) {
+          queryBuilder?.where(function () {
+            //@ts-ignore
+            hdd?.map((hdd) => this.orWhere("cableType", cableType));
+          });
+        }
+        if (connectivity?.length > 0) {
+          queryBuilder?.where(function () {
+            //@ts-ignore
+            connectivity?.map((connectivity) =>
+              this.orWhere("connectivity", connectivity)
+            );
+          });
+        }
+​
+        if (category?.length > 0) {
+          queryBuilder?.where(function () {
+            //@ts-ignore
+            category?.map((categoryoptions) =>
+              this.orWhere("category", categoryoptions)
+            );
+          });
+        }
+​
+        if (processor?.length > 0) {
+          queryBuilder?.where(function () {
+            //@ts-ignore
+            processor?.map((processoroptions) =>
+              this.orWhere("processor", processoroptions)
+            );
+          });
+        }
+​
+        if (ram?.length > 0) {
+          queryBuilder?.where(function () {
+            //@ts-ignore
+            ram?.map((ramoptions) => this.orWhere("ram", ramoptions));
+          });
+        }
+​
+        if (screen_size?.length > 0) {
+          queryBuilder?.where(function () {
+            //@ts-ignore
+            screen_size?.map((size) => this.orWhere("screen_size", size));
+          });
+        }
+​
+        if (asset_location?.length > 0) {
+          queryBuilder?.where(function () {
+            //@ts-ignore
+            asset_location?.map((assetlocation) =>
+              this.orWhere("asset_location", assetlocation)
+            );
+          });
+        }
+      });
+​
+    //send filtered assets in response
+    res.status(200).json({
+      message: "All assets fetched successfully",
+      data: data,
+    });
+  } catch (error) {
+    res.status(400).json({
+      error: "Error occured while fetching assets!",
+      errorMsg: error,
+    });
+  }
+});
+
+
+//filter options
+router.get("/filterOptions/", async (req: Request, res: Response) => {
+  const { category, status, asset_location } = req.query;
+
+  try {
+    // condition for all filteroptions
+    //@ts-ignore
+    if (!category) {
+      // get all brands whose category is mobile
+      const brands = await db("brands").select("name as brandName");
+
+      let filterOptions = await db("filters").select("fields", "filter_name");
+
+      const brandsArr = brands?.map((brand) => {
+        return { fields: brand.brandName, filter_name: "brandName" };
+      });
+
+      filterOptions = [...filterOptions, ...brandsArr];
+
+      const result = filterOptions?.reduce(function (r, a) {
+        r[a.filter_name] = r[a.filter_name] || [];
+        r[a.filter_name].push(a.fields);
+        return r;
+      }, Object.create(null));
+
+      res.status(200).json({
+        message: `Filter options fetched successfully`,
+        data: result,
+      });
+    } else {
+      // get all brands whose category is mobile
+      const brands = await db("brands")
+        .select("name as brandName")
+        .join(
+          "filtercategories",
+          "filtercategories.filter_categories_id",
+          "brands.filter_categories_id"
+        )
+        .modify((queryBuilder) => {
+          queryBuilder?.where(function () {
+            if (typeof category === "string") {
+              //@ts-ignore
+              this.orWhere("filtercategories.categories", category);
+            } else {
+              //@ts-ignore
+              category?.map((category) =>
+                this.orWhere("filtercategories.categories", category)
+              );
+            }
+          });
+        });
+
+      let filterOptions = await db("filters")
+        .select("fields", "filter_name")
+        .join(
+          "filtercategories",
+          "filtercategories.filter_categories_id",
+          "filters.filter_categories_id"
+        )
+        .modify((queryBuilder) => {
+          queryBuilder?.where(function () {
+            this.orWhere("filtercategories.categories", "common");
+            if (typeof category === "string") {
+              //@ts-ignore
+              this.orWhere("filtercategories.categories", category);
+            } else {
+              //@ts-ignore
+              category?.map((category) =>
+                this.orWhere("filtercategories.categories", category)
+              );
+            }
+          });
+        });
+
+      const brandsArr = brands?.map((brand: any) => {
+        return { fields: brand.brandName, filter_name: "brandName" };
+      });
+      filterOptions = [...filterOptions, ...brandsArr];
+      //@ts-ignore
+      const result = filterOptions?.reduce(function (r, a) {
+        r[a.filter_name] = r[a.filter_name] || [];
+        r[a.filter_name].push(a.fields);
+        return r;
+      }, Object.create(null));
+      res.status(200).json({
+        message: `Filter options fetched successfully`,
+        data: result,
+      });
+    }
+
+    // console.log(filterOptions, brands);
+  } catch (error) {
+    res.status(400).json({
+      error: "Error occured whie trying to fetch filter options!",
+      errorMsg: error,
+    });
+  }
+});
+
 
 export default router
