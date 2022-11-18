@@ -9,6 +9,7 @@ import db from "../config/connection";
 import { isAuth } from "../middleware/authorization";
 import csv from "csv-parser";
 import fs from "fs";
+
 export interface EmployeeType {
   empId: string;
   name: string;
