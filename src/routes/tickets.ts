@@ -34,9 +34,16 @@ router.post("/createTicket", isAuth, async (req: Request, res: Response) => {
     createdAt: moment().format("YYYY-MM-DD HH:mm:ss"),
   };
 
+  const { email } = await db("employees")
+    .select("email")
+    .where("empId", empId)
+    .first();
+  console.log(email);
+
+  const receipents = [email, "msbhadane708@gmail.com"];
   const mailOptions = {
     from: "mahesh.bhadane@torinit.ca",
-    to: "msbhadane708@gmail.com",
+    to: receipents,
     subject: "New Ticket Created",
     html: `    
 <div style="padding:30px;border-style: ridge;width:500px; height:500px ; margin-left:auto;margin-right:auto;">

@@ -109,18 +109,18 @@ router.get("/", async (req, res: Response) => {
 //Filters on assset
 router.post("/filter", async (req: Request, res: Response) => {
   const {
-    brands,
+    brandName,
     screen_type,
     ram,
     status,
     assetType,
     category,
-    operating_system,
+    os,
     processor,
     hdd,
     connectivity,
     screen_size,
-    asset_location,
+    location,
     ssd,
     cableType,
   } = req.body;
@@ -165,10 +165,10 @@ router.post("/filter", async (req: Request, res: Response) => {
             screen_type?.map((screen) => this.orWhere("screen_type", screen));
           });
         }
-        if (brands?.length > 0) {
+        if (brandName?.length > 0) {
           queryBuilder?.where(function () {
             //@ts-ignore
-            brands?.map((brand) => this.orWhere("brands.name", brand));
+            brandName?.map((brand) => this.orWhere("brands.name", brand));
           });
         }
         if (status?.length > 0) {
@@ -178,10 +178,10 @@ router.post("/filter", async (req: Request, res: Response) => {
           });
         }
 
-        if (operating_system?.length > 0) {
+        if (os?.length > 0) {
           queryBuilder?.where(function () {
             //@ts-ignore
-            operating_system?.map((os) => this.orWhere("operating_system", os));
+            os?.map((os) => this.orWhere("operating_system", os));
           });
         }
         if (hdd?.length > 0) {
@@ -214,9 +214,9 @@ router.post("/filter", async (req: Request, res: Response) => {
         if (category?.length > 0) {
           queryBuilder?.where(function () {
             //@ts-ignore
-            category?.map((categoryoptions) =>
-              this.orWhere("category", categoryoptions)
-            );
+            category?.map((categoryoptions) => {
+              this.orWhere("category", categoryoptions);
+            });
           });
         }
 
@@ -243,12 +243,12 @@ router.post("/filter", async (req: Request, res: Response) => {
           });
         }
 
-        if (asset_location?.length > 0) {
+        if (location?.length > 0) {
           queryBuilder?.where(function () {
             //@ts-ignore
-            asset_location?.map((assetlocation) =>
-              this.orWhere("asset_location", assetlocation)
-            );
+            location?.map((assetlocation) => {
+              this.orWhere("asset_location", assetlocation);
+            });
           });
         }
       });
