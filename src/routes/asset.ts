@@ -77,59 +77,6 @@ interface Filters {
   filter_name: string
 }
 
-//get all assets
-// router.get('/', isAuth, isAdmin, async (req, res: Response) => {
-//   const {
-//     name,
-//     allocate,
-//     assetType,
-//     isRented,
- 
-//     operating_system,
-//     processor
-//   } = req?.query
-//   const { screen_type } = req.body
-//   db<Asset>('assets')
-//     .select('*')
-//     .where('is_active', true)
-//     .modify(queryBuilder => {
-//       if (allocate === 'true') {
-//         queryBuilder?.where('status', `surplus`)
-//       }
-//       if (isRented === '0' || isRented === '1') {
-//         queryBuilder?.where('isRented', '=', `${isRented}`)
-//       }
-//       if (assetType === 'hardware' || assetType === 'software') {
-//         queryBuilder?.where('assetType', '=', assetType)
-//       }
-//       if (screen_type && screen_type !== 'undefined') {
-//         queryBuilder?.where('screen_type', '=', screen_type)
-//       }
-//       if (operating_system && operating_system !== 'undefined') {
-//         //console.log('data=>', operating_system)
-//         queryBuilder?.where('operating_system', '=', operating_system)
-//       }
-      
-//       if (processor && processor !== 'undefined') {
-//         queryBuilder?.where('processor', '=', processor)
-//       }
-//     })
-//     .where('name', 'like', `%${name}%`)
-//     .then(data => {
-//       // console.log(data)
-      
-//       res.status(200).json({
-//         message: 'All assets fetched successfully',
-//         data: data
-//       })
-//     })
-//     .catch(error => {
-//       res.status(400).json({
-//         error: 'Error occured while fetching assets!',
-//         errorMsg: error
-//       })
-//     })
-// })
 
 //get all assets
 router.get("/", async (req, res: Response) => {
