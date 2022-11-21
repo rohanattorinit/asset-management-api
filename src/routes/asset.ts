@@ -27,7 +27,6 @@ interface Asset {
   description: string;
   status: "allocated" | "surplus" | "broken" | "repairable";
   //usability: "usable" | "unusable" | "disposed";
-
   processor: string;
   screen_type: string;
   ram: number;
@@ -46,6 +45,7 @@ interface Asset {
   connectivity?: string;
   ssd?: string;
   cableType?: string;
+  allocationTime?: string;
 }
 
 interface Filters {
@@ -115,12 +115,12 @@ router.post("/filter", async (req: Request, res: Response) => {
     status,
     assetType,
     category,
-    os,
+    operating_system,
     processor,
     hdd,
     connectivity,
     screen_size,
-    location,
+    asset_location,
     ssd,
     cableType,
   } = req.body;
@@ -178,10 +178,12 @@ router.post("/filter", async (req: Request, res: Response) => {
           });
         }
 
-        if (os?.length > 0) {
+        if (operating_system?.length > 0) {
           queryBuilder?.where(function () {
             //@ts-ignore
-            os?.map((os) => this.orWhere("operating_system", os));
+            operating_system?.map((operating_system) =>
+              this.orWhere("operating_system", operating_system)
+            );
           });
         }
         if (hdd?.length > 0) {
@@ -243,10 +245,10 @@ router.post("/filter", async (req: Request, res: Response) => {
           });
         }
 
-        if (location?.length > 0) {
+        if (asset_location?.length > 0) {
           queryBuilder?.where(function () {
             //@ts-ignore
-            location?.map((assetlocation) => {
+            asset_location?.map((assetlocation) => {
               this.orWhere("asset_location", assetlocation);
             });
           });
@@ -508,6 +510,118 @@ router.post("/addAsset", async (req, res) => {
   }
 });
 
+// //add bulk assets
+// router.post(
+//   "/create-bulk",
+//   isAuth,
+//   isAdmin,
+//   upload.single("csvFile"),
+//   async (req: Request, res: Response) => {
+//     try {
+//       const results: Asset[] = [];
+//       fs.createReadStream(req.file?.path!)
+//         .pipe(csv())
+//         .on("data", (data: Asset) => results.push(data))
+//         .on("end", async () => {
+//           try {
+//             const allAssets = results.map(async (result: any) => {
+//               return await db("brands")
+//                 .select("brandId")
+//                 .where("name", "=", result.brandName)
+//                 .then((data) => {
+//                   delete result["brandName"];
+//                   result.brandId = data[0].brandId;
+//                   // result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
+
+//                   return result;
+//                 });
+//             });
+
+//             const resAssets: Asset[] = await Promise.all(allAssets);
+
+//             const allocatedEmp = resAssets?.map((asset) => {
+//               if (asset?.status === "allocated") {
+//                 const obj = {
+//                   empId: asset?.empId,
+//                   modelNo: asset?.modelNo,
+//                   // allocationTime: asset?.addedTime,
+//                 };
+//                 return obj;
+//               }
+//             });
+
+//             const refineAssets = resAssets.map((asset) => {
+//               delete asset?.empId;
+//               return asset;
+//             });
+
+//             await db<Asset>("assets").insert(refineAssets as unknown as Asset);
+
+//             const data = await db<Asset>("assets").select("*");
+//             const allocateData = data?.filter(
+//               (el) => el?.status === "allocated"
+//             );
+//             const alocateinsertdata: any = [];
+
+//             allocatedEmp?.map((elobj) => {
+//               allocateData?.map((asset) => {
+//                 if (asset?.modelNo === elobj?.modelNo) {
+//                   const allocationobj = {
+//                     empId: elobj?.empId,
+//                     assetId: asset?.assetId,
+//                     // allocationTime: elobj?.allocationTime,
+//                   };
+//                   alocateinsertdata.push(allocationobj);
+//                 }
+//               });
+//             });
+
+//             await db("assetallocation").insert(alocateinsertdata as any);
+
+//             res.status(200).json({ message: "Assets added Successfully!" });
+//           } catch (error: any) {
+//             if (error?.code === "ER_DUP_ENTRY") {
+//               res.status(400).json({
+//                 message: "duplicate Data",
+//               });
+//             } else {
+//               res.status(400).json({
+//                 error,
+//               });
+//             }
+//           }
+//         });
+//     } catch (error) {
+//       res.status(400).json({ error: error });
+//     }
+//   }
+// );
+
+const exists = async (key: string, value: any) => {
+  try {
+    if (key === "empId") {
+      const res = await db.first(
+        db.raw(
+          "exists ? as present",
+          db("employees").select(`${key}`).where(`${key}`, "=", value).limit(1)
+        )
+      );
+      return res.present === 1;
+    } else if (key === "modelNo") {
+      const res = await db.first(
+        db.raw(
+          "exists ? as present",
+          db("assets").select(`${key}`).where(`${key}`, "=", value).limit(1)
+        )
+      );
+      return res.present === 0;
+    } else {
+      return false;
+    }
+  } catch (err) {
+    throw new Error(`error while validating empId and ModelNo`);
+  }
+};
 //add bulk assets
 router.post(
   "/create-bulk",
@@ -519,78 +633,151 @@ router.post(
       const results: Asset[] = [];
       fs.createReadStream(req.file?.path!)
         .pipe(csv())
-        .on("data", (data: Asset) => results.push(data))
+        .on("data", async (data: Asset) => {
+          results?.push(data);
+        })
         .on("end", async () => {
           try {
-            const allAssets = results.map(async (result: any) => {
-              return await db("brands")
-                .select("brandId")
-                .where("name", "=", result.brandName)
-                .then((data) => {
-                  delete result["brandName"];
-                  result.brandId = data[0].brandId;
-                  // result.addedTime = moment().format("YYYY-MM-DD HH:mm:ss");
-
-                  return result;
+            const allAssets = results?.map(async (result: any) => {
+              const columnFields = await db("filters").select("*");
+              let filterOptions = await db("filters")
+                .select("fields", "filter_name")
+                .join(
+                  "filtercategories",
+                  "filtercategories.filter_categories_id",
+                  "filters.filter_categories_id"
+                )
+                .modify((queryBuilder) => {
+                  queryBuilder?.where(function () {
+                    this.orWhere("filtercategories.categories", "common");
+                    if (typeof result?.category === "string") {
+                      //@ts-ignore
+                      this.orWhere(
+                        "filtercategories.categories",
+                        result?.category
+                      );
+                    } else {
+                      //@ts-ignore
+                      category?.map((category) =>
+                        this.orWhere("filtercategories.categories", category)
+                      );
+                    }
+                  });
                 });
+
+              const filterr = filterOptions?.reduce(function (r: any, a: any) {
+                r[a.filter_name] = r[a.filter_name] || [];
+                r[a.filter_name].push(a.fields);
+                return r;
+              }, Object.create(null));
+
+              const requiredColumnsForLaptop: string[] = Object.keys(
+                filterr
+              )?.map((key: string) => {
+                return key.toLowerCase();
+              });
+
+              requiredColumnsForLaptop.map((item) => {
+                const headers = Object.keys(result);
+                if (headers.includes(item)) {
+                  // @ts-ignore
+                  const value = result[item];
+
+                  if (!value && value?.toLowerCase() !== "na") {
+                    // throw error
+                    throw new Error(
+                      `"${result?.name}" asset doesn't have a required" ${item}" field`
+                    );
+                  } else if (value === "") {
+                    throw new Error(
+                      `"${result?.name}" asset doesn't have a required" ${item}" field`
+                    );
+                  }
+                } else {
+                  throw new Error(
+                    `"${result?.name}" asset doesn't have a required "${item}" fields`
+                  );
+                }
+              });
+              ////////////////////////////////
+              const brand = await db("brands")
+                .select("brandId")
+                .where("name", "=", result?.brandName);
+              if (!brand?.length) {
+                throw new Error(`Brand: ${result?.brandName} doesn't exist!`);
+              }
+              delete result["brandName"];
+              result.brandId = brand[0]?.brandId;
+              if (
+                filterr?.status.includes(result?.status) &&
+                result?.status === "allocated"
+              ) {
+                const exist = await exists("empId", result?.empId);
+                if (exist) {
+                  return result;
+                } else {
+                  throw new Error(
+                    `"${result?.name}" asset doesn't have a valid Employee Id`
+                  );
+                }
+              } else {
+                return result;
+              }
             });
-
             const resAssets: Asset[] = await Promise.all(allAssets);
-
             const allocatedEmp = resAssets?.map((asset) => {
               if (asset?.status === "allocated") {
                 const obj = {
                   empId: asset?.empId,
                   modelNo: asset?.modelNo,
-                  // allocationTime: asset?.addedTime,
+                  allocationTime: asset?.allocationTime,
                 };
                 return obj;
               }
             });
-
-            const refineAssets = resAssets.map((asset) => {
+            const refineAssets = resAssets?.map((asset) => {
               delete asset?.empId;
+              delete asset?.allocationTime;
               return asset;
             });
-
+            console.log(refineAssets);
             await db<Asset>("assets").insert(refineAssets as unknown as Asset);
-
             const data = await db<Asset>("assets").select("*");
             const allocateData = data?.filter(
               (el) => el?.status === "allocated"
             );
-            const alocateinsertdata: any = [];
-
+            const allocateinsertdata: any = [];
             allocatedEmp?.map((elobj) => {
               allocateData?.map((asset) => {
                 if (asset?.modelNo === elobj?.modelNo) {
                   const allocationobj = {
                     empId: elobj?.empId,
                     assetId: asset?.assetId,
-                    // allocationTime: elobj?.allocationTime,
+                    allocationTime: elobj?.allocationTime,
                   };
-                  alocateinsertdata.push(allocationobj);
+                  allocateinsertdata.push(allocationobj);
                 }
               });
             });
-
-            await db("assetallocation").insert(alocateinsertdata as any);
-
+            await db("assetallocation").insert(allocateinsertdata as any);
             res.status(200).json({ message: "Assets added Successfully!" });
           } catch (error: any) {
             if (error?.code === "ER_DUP_ENTRY") {
               res.status(400).json({
-                message: "duplicate Data",
+                error: "duplicate Data",
+                errorMsg: error,
               });
             } else {
+              console.log(error)
               res.status(400).json({
-                error,
+                error: `error while creating adding assets`,
+                errorMsg: error,
               });
             }
           }
         });
     } catch (error) {
-      res.status(400).json({ error: error });
+      res.status(400).json({ error: "Error while creating adding assets" });
     }
   }
 );
