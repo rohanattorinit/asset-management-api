@@ -32,8 +32,6 @@ router.post("/createTicket", isAuth, async (req: Request, res: Response) => {
     ticketStatus: "active",
     createdAt: moment().format("YYYY-MM-DD HH:mm:ss"),
   };
-<<<<<<< HEAD
-=======
 
   const mailOptions = {
     from: "mahesh.bhadane@torinit.ca",
@@ -59,7 +57,6 @@ router.post("/createTicket", isAuth, async (req: Request, res: Response) => {
 "></center>`,
   };
 
->>>>>>> filters_email_changes
   db<Ticket>("tickets")
     .insert(ticket)
     .then(() => {

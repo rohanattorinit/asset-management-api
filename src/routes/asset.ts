@@ -105,7 +105,7 @@ router.get("/", async (req, res: Response) => {
       "assets.ram",
       "assets.operating_system",
       "assets.screen_size",
-      "assets.addedTime",
+      // "assets.addedTime",
       "assets.hdd",
       "assets.ssd",
       // "assets.addedTime",
@@ -113,10 +113,11 @@ router.get("/", async (req, res: Response) => {
       "assets.category",
       "assets.connectivity",
       "assets.ssd",
-      "assets.cableType"
+      "assets.cableType",
+      "assets.is_active"
     )
     .join("brands", "assets.brandId", "=", "brands.brandId")
-    .where("is_active", true)
+    .orderBy('assets.is_active','desc')
     .modify((queryBuilder) => {
       if (allocate === "true") {
         queryBuilder?.where("status", `surplus`);
@@ -539,7 +540,7 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
           screen_size,
           operating_system,
           asset_location,
-          addedTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+         // addedTime: moment().format('YYYY-MM-DD HH:mm:ss'),
           ssd,
           hdd,
           os_version,
@@ -562,7 +563,7 @@ router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
     const allocateObj = {
       empId: empId,
       assetId: id?.assetId,
-      allocationtime: asset?.addedTime
+      //allocationtime: asset?.addedTime
     }
 
     await db('assetallocation').insert(allocateObj)
@@ -1110,7 +1111,7 @@ router.post('/delete/:assetId', async (req: Request, res: Response) => {
     .then(() => {
       db('assets')
         .where('assetId', assetId)
-        .update({ is_active: false })
+        .update({ is_active: false,status: "broken" })
         .then(() =>
           res.status(200).json({ message: 'Asset Deleted successfully!' })
         )
@@ -1129,26 +1130,7 @@ router.post('/delete/:assetId', async (req: Request, res: Response) => {
     );
 });
 
-// Get count for pie charts
-router.get("/categoryCount", async (req:Request, res: Response) => {
-  try {
-    console.log(req)
-    // get total count of all categories of assets
-    const totalCount = await db.select('category').from('assets').count('* as count').groupBy('category');
-    
-    // get total count of surplus assets 
-    const surplusCount = await db.select('category').from('assets').count('* as count').groupBy('category').where('status','surplus');
 
-    res.status(200).json({
-      message: `Chart category count data fetched successfully`,
-      data: {totalAssetCount:totalCount,totalSurplusCount:surplusCount}
-    });
-    
-  } catch (error) {
-    res.status(400).json({error: "Error occured while fetching chart count data!",errorMsg:error})
-  }
-  
-});
 
 
 //Delete Asset 
@@ -1160,7 +1142,7 @@ router.post('/delete/:assetId', async (req: Request, res: Response) => {
     .then(() => {
       db('assets')
         .where('assetId', assetId)
-        .update({ is_active: false })
+        .update({ is_active: false,status: "broken" })
         .then(() =>
           res.status(200).json({ message: 'Asset Deleted successfully!' })
         )
