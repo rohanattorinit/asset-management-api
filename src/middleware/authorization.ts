@@ -12,14 +12,13 @@ export const isAdmin = async (
   next: NextFunction
 ) => {
   try {
-    
     const checkIsAdmin = (res: Response) => {
       const promise = new Promise((resolve, reject) => {
         db.select("*")
           .from("employees")
           .where("empId", "=", req?.user!)
           .then((data) => {
-            if (!data[0].isAdmin) {
+            if (!data[0]?.isAdmin) {
               res.status(401).json({
                 error: "You are not authorised to access this route!",
               });
@@ -47,21 +46,23 @@ export const isAuth = async (
 ) => {
   //@ts-ignore
   const token = req.headers?.authorization?.split("Bearer ")[1];
-  
+
   if (!token) {
     return res.status(403).json({ message: "Token is missing" });
   }
   try {
-   jwt.verify(token, process.env.SECRET_KEY!,(err:any, decoded:any)=>{
-    if(err?.name==='TokenExpiredError'){
-      req.user=undefined
-      return res.status(403).json({ message: "Token is expired! Try logging in again" });
-    } 
-    if(decoded){
-      //@ts-ignore
-      req.user = decoded?.empId;
-      return next();
-    }
+    jwt.verify(token, process.env.SECRET_KEY!, (err: any, decoded: any) => {
+      if (err?.name === "TokenExpiredError") {
+        req.user = undefined;
+        return res
+          .status(403)
+          .json({ message: "Token is expired! Try logging in again" });
+      }
+      if (decoded) {
+        //@ts-ignore
+        req.user = decoded?.empId;
+        return next();
+      }
     });
   } catch (error) {
     return res.status(401).json({ message: "Invalid token" });
