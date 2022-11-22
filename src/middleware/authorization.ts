@@ -19,7 +19,7 @@ export const isAdmin = async (
           .from("employees")
           .where("empId", "=", req?.user!)
           .then((data) => {
-            if (!data[0].isAdmin) {
+            if (!data[0]?.isAdmin) {
               res.status(401).json({
                 error: "You are not authorised to access this route!",
               });
@@ -53,6 +53,7 @@ export const isAuth = async (
   }
   try {
    jwt.verify(token, process.env.SECRET_KEY!,(err:any, decoded:any)=>{
+    console.log("expired",err,decoded);
     if(err?.name==='TokenExpiredError'){
       req.user=undefined
       return res.status(403).json({ message: "Token is expired! Try logging in again" });

@@ -110,7 +110,7 @@ router.post(
 
 //get all employees
 
-router.get("/",  async (req, res: Response) => {
+router.get("/",isAuth,isAdmin,  async (req, res: Response) => {
   const name = req?.query?.name;
 
   db.select("*")
