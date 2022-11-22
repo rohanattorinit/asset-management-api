@@ -49,7 +49,7 @@ router.get("/categoryCount", async (req:Request, res: Response) => {
       const totalCount = await db.select('category').from('assets').count('* as count').groupBy('category');
       
       // get total count of surplus assets 
-      const surplusCount = await db.select('category').from('assets').count('* as count').groupBy('category').where('status','surplus');
+      const surplusCount = await db.select('category').from('assets').count('* as count').groupBy('category').where('status','Surplus');
   
       res.status(200).json({
         message: `Chart category count data fetched successfully`,
