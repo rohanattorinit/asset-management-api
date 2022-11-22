@@ -495,7 +495,7 @@ router.post(
                   return key.toLowerCase();
                 }
               );
-              // console.log(requiredColumns)
+              console.log(requiredColumns);
               const requiredFields = [
                 ...requiredColumns,
                 "name",
@@ -504,7 +504,7 @@ router.post(
                 "make_year",
                 "received_date",
               ];
-              // console.log({requiredFields})
+              console.log({ requiredFields });
 
               requiredFields.map((item) => {
                 // @ts-ignore
@@ -546,7 +546,6 @@ router.post(
                   );
                 }
               }
-
               return result;
             });
             //////////////////////////////////////////////////
@@ -562,14 +561,26 @@ router.post(
               }
             });
             const refineAssets = resAssets?.map((asset) => {
+              const dataFields = Object.keys(asset);
+              dataFields?.map((item) => {
+                // @ts-ignore
+                if (asset[item].length === 0) {
+                  // @ts-ignore
+
+                  console.log(asset[item].length === 0);
+                  // @ts-ignore
+                  delete asset[item];
+                }
+              });
               delete asset?.empId;
               delete asset?.allocationTime;
+              console.log({ asset });
               return asset;
             });
             /////// asset allocation
             await db<Asset>("assets").insert(refineAssets as unknown as Asset);
-            const data = await db<Asset>("assets").select("*");
-            const allocateData = data?.filter(
+            const insertedAssets = await db<Asset>("assets").select("*");
+            const allocateData = insertedAssets?.filter(
               (el) => el?.status === "allocated"
             );
             const allocateinsertdata: any = [];
@@ -614,6 +625,7 @@ router.post(
                 errorMsg: error,
               });
             } else {
+              console.log(error);
               res
                 .status(400)
                 .json({ error: "Error while creating adding assets" });
