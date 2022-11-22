@@ -495,44 +495,75 @@ router.post(
                   return key.toLowerCase();
                 }
               );
-              console.log(requiredColumns);
               const requiredFields = [
                 ...requiredColumns,
+                "description",
                 "name",
                 "assetType",
                 "modelNo",
                 "make_year",
                 "received_date",
               ];
-              console.log({ requiredFields });
+              if (result?.category === "mobile") {
+                requiredFields?.push("imeiNo");
+              }
+              if (
+                result?.category === "mobile" ||
+                result?.category === "laptop" ||
+                result?.category === "watch"
+              ) {
+                requiredFields?.push("os_version");
+              }
 
-              requiredFields.map((item) => {
+              requiredFields?.map((item) => {
                 // @ts-ignore
-                if (!result[item].length > 0) {
+                if (!result[item]?.length > 0) {
                   throw new Error(
                     `"${result?.name}" asset doesn't have a required field " ${item}"`
                   );
                 }
               });
 
-              // const dataFields = Object.keys(result)
-              // console.log({dataFields});
-
-              // dataFields?.map(item => {
-              //     if(!requiredFields?.includes(item)) {
-              //     // @ts-ignore
-              //     delete result[item]
-              //     }
-              // })
+              const dataFields = Object.keys(result);
+              const rentedKeys = [
+                "isRented",
+                "vendor",
+                "rent",
+                "deposit",
+                "rentStartDate",
+                "rentEndDate",
+                "empId",
+                "allocationTime",
+                "brandName",
+              ];
+              let rented;
+              dataFields?.map((item) => {
+                // @ts-ignore
+                const value = result[item];
+                if (item === "isRented" && value === 0) {
+                  rented = false;
+                } else if (
+                  !requiredFields?.includes(item) &&
+                  !rentedKeys?.includes(item)
+                ) {
+                  // @ts-ignore
+                  delete result[item];
+                }
+              });
+              if (!rented) {
+                delete result?.vendor;
+                delete result?.rent;
+                delete result?.deposit;
+                delete result?.rentStartDate;
+                delete result?.rentEndDate;
+              }
               ///// brandcheck
               const brand = await db("brands")
                 .select("brandId")
-                .where("name", "=", result?.brandName);
+                .where("name", "=", "Lenovo");
               if (!brand[0]?.brandId) {
-                console.log(brand);
                 throw new Error(`Brand: ${result?.brandName} doesn't exist!`);
               }
-              //  console.log(result?.brandName)
               delete result["brandName"];
               result.brandId = brand[0]?.brandId;
               if (
@@ -566,15 +597,11 @@ router.post(
                 // @ts-ignore
                 if (asset[item].length === 0) {
                   // @ts-ignore
-
-                  console.log(asset[item].length === 0);
-                  // @ts-ignore
                   delete asset[item];
                 }
               });
               delete asset?.empId;
               delete asset?.allocationTime;
-              console.log({ asset });
               return asset;
             });
             /////// asset allocation
@@ -625,17 +652,18 @@ router.post(
                 errorMsg: error,
               });
             } else {
-              console.log(error);
-              res
-                .status(400)
-                .json({ error: "Error while creating adding assets" });
+              res.status(400).json({
+                error: "Error while creating adding assets",
+                errorMsg: error,
+              });
             }
           }
         });
     } catch (error: any) {
-      res
-        .status(400)
-        .json({ error: "Error while creating adding assetscfgfhjghjfgghgf" });
+      res.status(400).json({
+        error: "Error while creating adding assetscfgfhjghjfgghgf",
+        errorMsg: error,
+      });
     }
   }
 );
