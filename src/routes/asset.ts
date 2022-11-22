@@ -70,6 +70,7 @@ interface UpdateAssetType {
   make_year?:number
   connectivity?:'wired' | 'wireless'
   cableType?: string
+  is_active?: boolean
 }
 
 
@@ -110,10 +111,11 @@ router.get("/", async (req, res: Response) => {
       "assets.category",
       "assets.connectivity",
       "assets.ssd",
-      "assets.cableType"
+      "assets.cableType",
+      "assets.is_active"
     )
     .join("brands", "assets.brandId", "=", "brands.brandId")
-    .where("is_active", true)
+    .orderBy('assets.is_active','desc')
     .modify((queryBuilder) => {
 
       if (allocate === 'true') {
@@ -180,7 +182,7 @@ router.get(
       .from('assets')
       .join('brands', 'assets.brandId', '=', 'brands.brandId')
       .where('assets.assetId', '=', assetId)
-      .where('assets.is_active', true)
+      //.where('assets.is_active', true)
       .first()
       .then(async data => {
         if (data.status === 'allocated') {
@@ -805,10 +807,12 @@ router.post("/filter", async (req: Request, res: Response) => {
         "assets.category",
         "assets.connectivity",
         "assets.ssd",
-        "assets.cableType"
+        "assets.cableType",
+        "assets.is_active"
       )
       .join("brands", "assets.brandId", "=", "brands.brandId")
-      .where("is_active", true)
+      .orderBy('assets.is_active','desc')
+      // .where("is_active", true)
       .modify((queryBuilder) => {
         // if (assetType === "hardware" || assetType === "software") {
         //   queryBuilder?.where("assetType", "=", assetType);
