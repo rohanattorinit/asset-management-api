@@ -174,7 +174,8 @@ router.get(
       'assets.imeiNo',
       'assets.make_year',
       'assets.connectivity',
-      'assets.cableType'
+      'assets.cableType',
+      "assets.is_active"
 
      
       
@@ -216,7 +217,8 @@ router.get(
              'assets.imeiNo',
              'assets.make_year',
              'assets.connectivity',
-            'assets.cableType'
+            'assets.cableType',
+            "assets.is_active"
           )
             .from('assets')
             .join('brands', 'assets.brandId', '=', 'brands.brandId')
