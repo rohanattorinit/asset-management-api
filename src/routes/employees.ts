@@ -137,6 +137,7 @@ router.get("/",  async (req, res: Response) => {
 //get a single employee
 router.get("/:id", isAuth, isAdmin, async (req: Request, res: Response) => {
   const { id } = req.params;
+
   db.select("*")
     .from("employees")
     .where("empId", "=", id)
