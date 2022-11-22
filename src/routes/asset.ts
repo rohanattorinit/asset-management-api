@@ -458,182 +458,193 @@ router.post(
         .on("data", (data: Asset) => results?.push(data))
         .on("end", async () => {
           try {
-            const allAssets = results?.map(async (result: any) => {
-              let filterOptions = await db("filters")
-                .select("fields", "filter_name")
-                .join(
-                  "filtercategories",
-                  "filtercategories.filter_categories_id",
-                  "filters.filter_categories_id"
-                )
-                .modify((queryBuilder) => {
-                  queryBuilder?.where(function () {
-                    this.orWhere("filtercategories.categories", "common");
-                    if (typeof result?.category === "string") {
-                      //@ts-ignore
-                      this.orWhere(
-                        "filtercategories.categories",
-                        result?.category
-                      );
-                    } else {
-                      //@ts-ignore
-                      category?.map((category) =>
-                        this.orWhere("filtercategories.categories", category)
-                      );
-                    }
+            if (results?.length === 0) {
+              throw new Error(`csv file is empty please check csv file data`);
+            } else {
+              const allAssets = results?.map(async (result: any) => {
+                let filterOptions = await db("filters")
+                  .select("fields", "filter_name")
+                  .join(
+                    "filtercategories",
+                    "filtercategories.filter_categories_id",
+                    "filters.filter_categories_id"
+                  )
+                  .modify((queryBuilder) => {
+                    queryBuilder?.where(function () {
+                      this.orWhere("filtercategories.categories", "common");
+                      if (typeof result?.category === "string") {
+                        //@ts-ignore
+                        this.orWhere(
+                          "filtercategories.categories",
+                          result?.category
+                        );
+                      } else {
+                        //@ts-ignore
+                        category?.map((category) =>
+                          this.orWhere("filtercategories.categories", category)
+                        );
+                      }
+                    });
                   });
+
+                const filterr = filterOptions?.reduce(function (
+                  r: any,
+                  a: any
+                ) {
+                  r[a.filter_name] = r[a.filter_name] || [];
+                  r[a.filter_name].push(a.fields);
+                  return r;
+                },
+                Object.create(null));
+
+                const requiredColumns: string[] = Object.keys(filterr)?.map(
+                  (key: string) => {
+                    return key.toLowerCase();
+                  }
+                );
+                const requiredFields = [
+                  ...requiredColumns,
+                  "description",
+                  "name",
+                  "assetType",
+                  "modelNo",
+                  "make_year",
+                  "received_date",
+                ];
+                if (result?.category === "mobile") {
+                  requiredFields?.push("imeiNo");
+                }
+                if (
+                  result?.category === "mobile" ||
+                  result?.category === "laptop" ||
+                  result?.category === "watch"
+                ) {
+                  requiredFields?.push("os_version");
+                }
+
+                requiredFields?.map((item) => {
+                  // @ts-ignore
+                  if (!result[item]?.length > 0) {
+                    throw new Error(
+                      `"${result?.name}" asset doesn't have a required field " ${item}"`
+                    );
+                  }
                 });
 
-              const filterr = filterOptions?.reduce(function (r: any, a: any) {
-                r[a.filter_name] = r[a.filter_name] || [];
-                r[a.filter_name].push(a.fields);
-                return r;
-              }, Object.create(null));
-
-              const requiredColumns: string[] = Object.keys(filterr)?.map(
-                (key: string) => {
-                  return key.toLowerCase();
+                const dataFields = Object.keys(result);
+                const rentedKeys = [
+                  "vendor",
+                  "rent",
+                  "deposit",
+                  "rentStartDate",
+                  "rentEndDate",
+                  "empId",
+                  "allocationTime",
+                  "brandName",
+                  "isRented",
+                ];
+                let rented;
+                dataFields?.map((item) => {
+                  // @ts-ignore
+                  const value = result[item];
+                  if (item === "isRented" && value === 0) {
+                    rented = false;
+                  } else if (
+                    !requiredFields?.includes(item) &&
+                    !rentedKeys?.includes(item)
+                  ) {
+                    // @ts-ignore
+                    delete result[item];
+                  }
+                });
+                if (!rented) {
+                  delete result?.vendor;
+                  delete result?.rent;
+                  delete result?.deposit;
+                  delete result?.rentStartDate;
+                  delete result?.rentEndDate;
                 }
-              );
-              const requiredFields = [
-                ...requiredColumns,
-                "description",
-                "name",
-                "assetType",
-                "modelNo",
-                "make_year",
-                "received_date",
-              ];
-              if (result?.category === "mobile") {
-                requiredFields?.push("imeiNo");
-              }
-              if (
-                result?.category === "mobile" ||
-                result?.category === "laptop" ||
-                result?.category === "watch"
-              ) {
-                requiredFields?.push("os_version");
-              }
-
-              requiredFields?.map((item) => {
-                // @ts-ignore
-                if (!result[item]?.length > 0) {
-                  throw new Error(
-                    `"${result?.name}" asset doesn't have a required field " ${item}"`
-                  );
+                ///// brandcheck
+                const brand = await db("brands")
+                  .select("brandId")
+                  .where("name", "=", "Lenovo");
+                if (!brand[0]?.brandId) {
+                  throw new Error(`Brand: ${result?.brandName} doesn't exist!`);
                 }
-              });
-
-              const dataFields = Object.keys(result);
-              const rentedKeys = [
-                "isRented",
-                "vendor",
-                "rent",
-                "deposit",
-                "rentStartDate",
-                "rentEndDate",
-                "empId",
-                "allocationTime",
-                "brandName",
-              ];
-              let rented;
-              dataFields?.map((item) => {
-                // @ts-ignore
-                const value = result[item];
-                if (item === "isRented" && value === 0) {
-                  rented = false;
-                } else if (
-                  !requiredFields?.includes(item) &&
-                  !rentedKeys?.includes(item)
+                delete result["brandName"];
+                result.brandId = brand[0]?.brandId;
+                if (
+                  filterr?.status.includes(result?.status) &&
+                  result?.status === "allocated"
                 ) {
-                  // @ts-ignore
-                  delete result[item];
+                  const exist = await exists("empId", result?.empId);
+                  if (!exist) {
+                    throw new Error(
+                      `"${result?.name}" asset doesn't have a valid Employee Id`
+                    );
+                  }
                 }
+                console.log(result);
+                return result;
               });
-              if (!rented) {
-                delete result?.vendor;
-                delete result?.rent;
-                delete result?.deposit;
-                delete result?.rentStartDate;
-                delete result?.rentEndDate;
-              }
-              ///// brandcheck
-              const brand = await db("brands")
-                .select("brandId")
-                .where("name", "=", "Lenovo");
-              if (!brand[0]?.brandId) {
-                throw new Error(`Brand: ${result?.brandName} doesn't exist!`);
-              }
-              delete result["brandName"];
-              result.brandId = brand[0]?.brandId;
-              if (
-                filterr?.status.includes(result?.status) &&
-                result?.status === "allocated"
-              ) {
-                const exist = await exists("empId", result?.empId);
-                if (!exist) {
-                  throw new Error(
-                    `"${result?.name}" asset doesn't have a valid Employee Id`
-                  );
-                }
-              }
-              return result;
-            });
-            //////////////////////////////////////////////////
-            const resAssets: Asset[] = await Promise.all(allAssets);
-            const allocatedEmp = resAssets?.map((asset) => {
-              if (asset?.status === "allocated") {
-                const obj = {
-                  empId: asset?.empId,
-                  modelNo: asset?.modelNo,
-                  allocationTime: asset?.allocationTime,
-                };
-                return obj;
-              }
-            });
-            const refineAssets = resAssets?.map((asset) => {
-              const dataFields = Object.keys(asset);
-              dataFields?.map((item) => {
-                // @ts-ignore
-                if (asset[item].length === 0) {
-                  // @ts-ignore
-                  delete asset[item];
-                }
-              });
-              delete asset?.empId;
-              delete asset?.allocationTime;
-              return asset;
-            });
-            /////// asset allocation
-            await db<Asset>("assets").insert(refineAssets as unknown as Asset);
-            const insertedAssets = await db<Asset>("assets").select("*");
-            const allocateData = insertedAssets?.filter(
-              (el) => el?.status === "allocated"
-            );
-            const allocateinsertdata: any = [];
-            allocatedEmp?.map((elobj) => {
-              allocateData?.map((asset) => {
-                if (asset?.modelNo === elobj?.modelNo) {
-                  const allocationobj = {
-                    empId: elobj?.empId,
-                    assetId: asset?.assetId,
-                    allocationTime: elobj?.allocationTime,
+              //////////////////////////////////////////////////
+              const resAssets: Asset[] = await Promise.all(allAssets);
+              const allocatedEmp = resAssets?.map((asset) => {
+                if (asset?.status === "allocated") {
+                  const obj = {
+                    empId: asset?.empId,
+                    modelNo: asset?.modelNo,
+                    allocationTime: asset?.allocationTime,
                   };
-                  allocateinsertdata.push(allocationobj);
+                  return obj;
                 }
               });
-            });
-            if (allocateinsertdata?.length > 0) {
-              await db("assetallocation").insert(allocateinsertdata as any);
-              res.status(201).json({
-                message: "Asset created successfully",
+              const refineAssets = resAssets?.map((asset) => {
+                const dataFields = Object.keys(asset);
+                dataFields?.map((item) => {
+                  // @ts-ignore
+                  if (asset[item].length === 0) {
+                    // @ts-ignore
+                    delete asset[item];
+                  }
+                });
+                delete asset?.empId;
+                delete asset?.allocationTime;
+                return asset;
               });
-              next();
-            } else {
-              res.status(201).json({
-                message: "Asset created successfully",
+              /////// asset allocation
+              await db<Asset>("assets").insert(
+                refineAssets as unknown as Asset
+              );
+              const insertedAssets = await db<Asset>("assets").select("*");
+              const allocateData = insertedAssets?.filter(
+                (el) => el?.status === "allocated"
+              );
+              const allocateinsertdata: any = [];
+              allocatedEmp?.map((elobj) => {
+                allocateData?.map((asset) => {
+                  if (asset?.modelNo === elobj?.modelNo) {
+                    const allocationobj = {
+                      empId: elobj?.empId,
+                      assetId: asset?.assetId,
+                      allocationTime: elobj?.allocationTime,
+                    };
+                    allocateinsertdata.push(allocationobj);
+                  }
+                });
               });
-              next();
+              if (allocateinsertdata?.length > 0) {
+                await db("assetallocation").insert(allocateinsertdata as any);
+                res.status(201).json({
+                  message: "Asset created successfully",
+                });
+                next();
+              } else {
+                res.status(201).json({
+                  message: "Asset created successfully",
+                });
+                next();
+              }
             }
           } catch (error: any) {
             if (error?.code === "ER_DUP_ENTRY") {
@@ -651,19 +662,26 @@ router.post(
                 error: `${error}`,
                 errorMsg: error,
               });
-            } else {
+            } else if (error?.toString().includes("csv")) {
               res.status(400).json({
-                error: "Error while creating adding assets",
+                error: `${error}`,
                 errorMsg: error,
               });
+            } else {
+              console.log(error);
+              res
+                .status(400)
+                .json({
+                  error: "Error while creating adding assets",
+                  errorMsg: error,
+                });
             }
           }
         });
     } catch (error: any) {
-      res.status(400).json({
-        error: "Error while creating adding assetscfgfhjghjfgghgf",
-        errorMsg: error,
-      });
+      res
+        .status(400)
+        .json({ error: "Error while creating adding assets", errorMsg: error });
     }
   }
 );

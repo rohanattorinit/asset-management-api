@@ -74,33 +74,44 @@ router.post(
   isAdmin,
   upload.single("csvFile"),
   async (req: Request, res: Response) => {
-    const generateHash = async (email: string) => {
-      return await bcrypt.hash(email, 10);
-    };
     try {
+      const generateHash = async (email: string) => {
+        return await bcrypt.hash(email, 10);
+      };
       //validate size and type of file
       const results: EmployeeType[] = [];
       fs.createReadStream(req.file?.path!)
         .pipe(csv())
         .on("data", (data) => results.push(data))
         .on("end", async () => {
+          try{
           const employees = results.map(async (result: EmployeeType) => {
             const hash = await generateHash(result.email);
             result.password = hash;
             return result;
           });
 
-          Promise.all(employees).then((results) => {
-            db<EmployeeType>("employees")
-              .insert(results as unknown as EmployeeType)
-              .then(() => {
+          const employeeData = await Promise.all(employees)
+          await db<EmployeeType>("employees")
+              .insert(employeeData as unknown as EmployeeType)
                 res.status(200).json({
                   message: "Employee added Successfully!",
                 });
-              });
-          });
+        
+        }  catch(error: any){
+            if(error?.code === "ER_DUP_ENTRY" ){
+              res.status(400).json({
+                error : "duplicate Data",
+                errorMsg: error,
+              })
+            }  else {
+              console.log(error)
+              res.status(400).json({ error: "Error while creating adding employees" ,  errorMsg: error  })
+            }
+          }
         });
     } catch (error) {
+      console.log({error})
       res.status(400).json({
         error: "Error while creating adding employees",
       });

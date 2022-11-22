@@ -34,61 +34,64 @@ router.post("/", async (req: RequestCustom, res: Response) => {
           db("tokens")
             .select("*")
             .where("emp_id", "=", data[0].empId)
-            .then((tokenData) => {          
+            .then((tokenData) => {
               if (tokenData[0]) {
-                console.log(tokenData[0],'token')
-                 jwt.verify(tokenData[0]?.token, process.env.SECRET_KEY!,(err:any, decoded:any)=>{
-                  console.log(err,decoded)
-                  if(err?.name==='TokenExpiredError'){
-                    //create new token and update in db and send to client
-                    const newToken = jwt.sign(
-                      { empId: data[0]?.empId },
-                      process.env.SECRET_KEY!,
-                      {
-                        expiresIn: 60*10,
-                      }
-                    );
-                    const tokenUpdatedObj = {
-                      token: newToken,
-                      emp_id: data[0].empId,
-                    };
-                    db("tokens")
-                      .update({ token: newToken })
-                      .where("emp_id", tokenUpdatedObj?.emp_id)
-                      .then(() => {
-                        const userData = {
-                          empId: data[0]?.empId,
-                          name: data[0]?.name,
-                          email: data[0]?.email,
-                          phone: data[0]?.phone,
-                          location: data[0]?.location,
-                          isAdmin: data[0]?.isAdmin,
-                          jobTitle: data[0]?.jobTitle,
-                        };
-                        req.user = data[0]?.empId;
-                        res.status(200).cookie("token", newToken, options).json({
-                          message: "Logged in Successfully!",
-                          token: newToken,
-                          user: userData,
+                jwt.verify(
+                  tokenData[0]?.token,
+                  process.env.SECRET_KEY!,
+                  (err: any, decoded: any) => {
+                    if (err?.name === "TokenExpiredError") {
+                      //create new token and update in db and send to client
+                      const newToken = jwt.sign(
+                        { empId: data[0]?.empId },
+                        process.env.SECRET_KEY!,
+                        {
+                          expiresIn: "2h",
+                        }
+                      );
+                      const tokenUpdatedObj = {
+                        token: newToken,
+                        emp_id: data[0].empId,
+                      };
+                      db("tokens")
+                        .update({ token: newToken })
+                        .where("emp_id", tokenUpdatedObj?.emp_id)
+                        .then(() => {
+                          const userData = {
+                            empId: data[0]?.empId,
+                            name: data[0]?.name,
+                            email: data[0]?.email,
+                            phone: data[0]?.phone,
+                            location: data[0]?.location,
+                            isAdmin: data[0]?.isAdmin,
+                            jobTitle: data[0]?.jobTitle,
+                          };
+                          req.user = data[0]?.empId;
+                          res
+                            .status(200)
+                            .cookie("token", newToken, options)
+                            .json({
+                              message: "Logged in Successfully!",
+                              token: newToken,
+                              user: userData,
+                            });
                         });
+                    } else {
+                      //@ts-ignore
+                      req.user = decoded?.empId;
+                      res.status(400).json({
+                        error: "Please Logout from Other Devices & Try Again!!",
                       });
+                    }
                   }
-                  else{
-                    //@ts-ignore
-                    req.user = decoded?.empId;
-                    res.status(400).json({
-                      error: "Please Logout from Other Devices & Try Again!!",
-                    });
-                  }
-                  })
-                  } 
-                  else {
+                );
+              } else {
                 //create token and insert in DB
                 const token = jwt.sign(
                   { empId: data[0]?.empId },
                   process.env.SECRET_KEY!,
                   {
-                    expiresIn: 60*10,
+                    expiresIn: "2h",
                   }
                 );
                 const tokenObj = {
@@ -107,7 +110,7 @@ router.post("/", async (req: RequestCustom, res: Response) => {
                       isAdmin: data[0]?.isAdmin,
                       jobTitle: data[0]?.jobTitle,
                     };
-                    req.user=data[0].empId;
+                    req.user = data[0].empId;
                     res.status(200).cookie("token", token, options).json({
                       message: "Logged in Successfully!",
                       token,
@@ -124,7 +127,6 @@ router.post("/", async (req: RequestCustom, res: Response) => {
     res.status(400).json({ error: "Error occured while logging in" });
   }
 });
-
 
 //change password
 router.post(
@@ -143,31 +145,29 @@ router.post(
         res.status(200).json({ message: "Password Changed Successfully!" });
       })
       .catch((error) =>
-        res
-          .status(400)
-          .json({ error: "Error occured while changing password!",errorMsg:error })
+        res.status(400).json({
+          error: "Error occured while changing password!",
+          errorMsg: error,
+        })
       );
   }
 );
 
 //delete a user
-router.post(
-  "/logout/",
-  isAuth,
-  async (req: RequestCustom, res: Response) => {
-    
-    db("tokens")
-      .where("emp_id", req.user)
-      .del()
-      .then(() => {
-        req.user=undefined;
-        res.status(200).json({ message: "Logged out Successfully!" });
-      })
-      .catch((error) =>
-        res.status(400).json({ error: "Error occured while logging out!",errorMsg:error })
-      );
-  }
-);
+router.post("/logout/", isAuth, async (req: RequestCustom, res: Response) => {
+  db("tokens")
+    .where("emp_id", req.user)
+    .del()
+    .then(() => {
+      req.user = undefined;
+      res.status(200).json({ message: "Logged out Successfully!" });
+    })
+    .catch((error) =>
+      res
+        .status(400)
+        .json({ error: "Error occured while logging out!", errorMsg: error })
+    );
+});
 
 //Get user profile
 router.get("/profile", isAuth, async (req: RequestCustom, res: Response) => {
