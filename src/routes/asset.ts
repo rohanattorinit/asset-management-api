@@ -669,12 +669,10 @@ router.post(
               });
             } else {
               console.log(error);
-              res
-                .status(400)
-                .json({
-                  error: "Error while creating adding assets",
-                  errorMsg: error,
-                });
+              res.status(400).json({
+                error: "Error while creating adding assets",
+                errorMsg: error,
+              });
             }
           }
         });
@@ -976,6 +974,7 @@ router.post("/filter", async (req: Request, res: Response) => {
     });
   }
 });
+
 //filter options
 router.get("/filterOptions/", async (req: Request, res: Response) => {
   const { category, status, asset_location } = req.query;
@@ -1053,7 +1052,9 @@ router.get("/filterOptions/", async (req: Request, res: Response) => {
       const brandsArr = brands?.map((brand: any) => {
         return { fields: brand.brandName, filter_name: "brandName" };
       });
+
       filterOptions = [...filterOptions, ...brandsArr];
+
       //@ts-ignore
       const result = filterOptions?.reduce(function (r, a) {
         r[a.filter_name] = r[a.filter_name] || [];
@@ -1065,8 +1066,6 @@ router.get("/filterOptions/", async (req: Request, res: Response) => {
         data: result,
       });
     }
-
-    // console.log(filterOptions, brands);
   } catch (error) {
     res.status(400).json({
       error: "Error occured whie trying to fetch filter options!",
