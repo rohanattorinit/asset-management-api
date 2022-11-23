@@ -821,6 +821,7 @@ router.post("/delete/:assetId", async (req: Request, res: Response) => {
 
 //Filters on assset
 router.post("/filter", async (req: Request, res: Response) => {
+  const { name, isRented, allocate } = req?.query;
   const {
     brandName,
     screen_type,
@@ -870,6 +871,15 @@ router.post("/filter", async (req: Request, res: Response) => {
       .orderBy("assets.is_active", "desc")
       // .where("is_active", true)
       .modify((queryBuilder) => {
+        
+      if (allocate === "true") {
+        queryBuilder?.where("status", `surplus`)
+      }
+      if (isRented === "0" || isRented === "1") {
+        queryBuilder?.where("isRented", "=", `${isRented}`)
+      }
+    
+   
         // if (assetType === "hardware" || assetType === "software") {
         //   queryBuilder?.where("assetType", "=", assetType);
         // }
@@ -961,7 +971,7 @@ router.post("/filter", async (req: Request, res: Response) => {
             });
           });
         }
-      });
+      }).where("assets.name", "like", `%${name}%`)
     //send filtered assets in response
     res.status(200).json({
       message: "All assets fetched successfully",
