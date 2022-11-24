@@ -177,7 +177,7 @@ router.get(
       //.where('assets.is_active', true)
       .first()
       .then(async (data) => {
-        if (data.status === "allocated") {
+        if (data.status === "Allocated") {
           db.select(
             "assets.assetId",
             "brands.name as brandName",
@@ -669,12 +669,10 @@ router.post(
               });
             } else {
               console.log(error);
-              res
-                .status(400)
-                .json({
-                  error: "Error while creating adding assets",
-                  errorMsg: error,
-                });
+              res.status(400).json({
+                error: "Error while creating adding assets",
+                errorMsg: error,
+              });
             }
           }
         });
@@ -823,6 +821,7 @@ router.post("/delete/:assetId", async (req: Request, res: Response) => {
 
 //Filters on assset
 router.post("/filter", async (req: Request, res: Response) => {
+  const { name, isRented, allocate } = req?.query;
   const {
     brandName,
     screen_type,
@@ -872,6 +871,13 @@ router.post("/filter", async (req: Request, res: Response) => {
       .orderBy("assets.is_active", "desc")
       // .where("is_active", true)
       .modify((queryBuilder) => {
+        if (allocate === "true") {
+          queryBuilder?.where("status", `surplus`);
+        }
+        if (isRented === "0" || isRented === "1") {
+          queryBuilder?.where("isRented", "=", `${isRented}`);
+        }
+
         // if (assetType === "hardware" || assetType === "software") {
         //   queryBuilder?.where("assetType", "=", assetType);
         // }
@@ -963,7 +969,8 @@ router.post("/filter", async (req: Request, res: Response) => {
             });
           });
         }
-      });
+      })
+      .where("assets.name", "like", `%${name}%`);
     //send filtered assets in response
     res.status(200).json({
       message: "All assets fetched successfully",
@@ -976,6 +983,7 @@ router.post("/filter", async (req: Request, res: Response) => {
     });
   }
 });
+
 //filter options
 router.get("/filterOptions/", async (req: Request, res: Response) => {
   const { category, status, asset_location } = req.query;
@@ -1053,7 +1061,9 @@ router.get("/filterOptions/", async (req: Request, res: Response) => {
       const brandsArr = brands?.map((brand: any) => {
         return { fields: brand.brandName, filter_name: "brandName" };
       });
+
       filterOptions = [...filterOptions, ...brandsArr];
+
       //@ts-ignore
       const result = filterOptions?.reduce(function (r, a) {
         r[a.filter_name] = r[a.filter_name] || [];
@@ -1065,8 +1075,6 @@ router.get("/filterOptions/", async (req: Request, res: Response) => {
         data: result,
       });
     }
-
-    // console.log(filterOptions, brands);
   } catch (error) {
     res.status(400).json({
       error: "Error occured whie trying to fetch filter options!",
