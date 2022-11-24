@@ -567,7 +567,7 @@ router.post(
                 ///// brandcheck
                 const brand = await db("brands")
                   .select("brandId")
-                  .where("name", "=", "Lenovo");
+                  .where("name", "=", result?.brandName);
                 if (!brand[0]?.brandId) {
                   throw new Error(`Brand: ${result?.brandName} doesn't exist!`);
                 }
@@ -1070,6 +1070,7 @@ router.get("/filterOptions/", async (req: Request, res: Response) => {
         r[a.filter_name].push(a.fields);
         return r;
       }, Object.create(null));
+
       res.status(200).json({
         message: `Filter options fetched successfully`,
         data: result,
