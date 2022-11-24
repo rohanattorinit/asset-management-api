@@ -177,7 +177,7 @@ router.get(
       //.where('assets.is_active', true)
       .first()
       .then(async (data) => {
-        if (data.status === "allocated") {
+        if (data.status === "Allocated") {
           db.select(
             "assets.assetId",
             "brands.name as brandName",
