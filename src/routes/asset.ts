@@ -177,7 +177,7 @@ router.get(
       //.where('assets.is_active', true)
       .first()
       .then(async (data) => {
-        if (data.status === "allocated") {
+        if (data.status === "Allocated") {
           db.select(
             "assets.assetId",
             "brands.name as brandName",
@@ -871,15 +871,13 @@ router.post("/filter", async (req: Request, res: Response) => {
       .orderBy("assets.is_active", "desc")
       // .where("is_active", true)
       .modify((queryBuilder) => {
-        
-      if (allocate === "true") {
-        queryBuilder?.where("status", `surplus`)
-      }
-      if (isRented === "0" || isRented === "1") {
-        queryBuilder?.where("isRented", "=", `${isRented}`)
-      }
-    
-   
+        if (allocate === "true") {
+          queryBuilder?.where("status", `surplus`);
+        }
+        if (isRented === "0" || isRented === "1") {
+          queryBuilder?.where("isRented", "=", `${isRented}`);
+        }
+
         // if (assetType === "hardware" || assetType === "software") {
         //   queryBuilder?.where("assetType", "=", assetType);
         // }
@@ -971,7 +969,8 @@ router.post("/filter", async (req: Request, res: Response) => {
             });
           });
         }
-      }).where("assets.name", "like", `%${name}%`)
+      })
+      .where("assets.name", "like", `%${name}%`);
     //send filtered assets in response
     res.status(200).json({
       message: "All assets fetched successfully",
