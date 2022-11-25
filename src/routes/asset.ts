@@ -113,7 +113,7 @@ router.get("/", async (req, res: Response) => {
     .orderBy("assets.is_active", "desc")
     .modify((queryBuilder) => {
       if (allocate === "true") {
-        queryBuilder?.where("status", `surplus`);
+        queryBuilder?.where("status", `Surplus`);
       }
       if (isRented === "0" || isRented === "1") {
         queryBuilder?.where("isRented", "=", `${isRented}`);
