@@ -6,7 +6,7 @@ import { isAdmin, isAuth } from "../middleware/authorization";
 import multer from "multer";
 import fs from "fs";
 import csv from "csv-parser";
-import brands from "./brands";
+import uniq from "lodash.uniqby";
 const upload = multer({ dest: "/tmp" });
 
 interface Asset {
@@ -222,7 +222,6 @@ router.get(
             .where("assets.assetId", "=", assetId)
             .first()
             .then((data) => {
-              //console.log(data?.received_date)
               res.status(200).json({ data: data });
             })
             .catch((error) =>
@@ -232,7 +231,6 @@ router.get(
               })
             );
         } else {
-          //  console.log({data})
           res.status(200).json({
             message: `Asset with assetId:${assetId} fetched successfully`,
             data: data,
@@ -410,7 +408,6 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
         errorMsg: error,
       });
     } else {
-      //console.log(error)
       res.status(400).json({
         error,
       });
@@ -567,7 +564,7 @@ router.post(
                 ///// brandcheck
                 const brand = await db("brands")
                   .select("brandId")
-                  .where("name", "=", "Lenovo");
+                  .where("name", "=", result?.brandName);
                 if (!brand[0]?.brandId) {
                   throw new Error(`Brand: ${result?.brandName} doesn't exist!`);
                 }
@@ -584,7 +581,7 @@ router.post(
                     );
                   }
                 }
-                console.log(result);
+
                 return result;
               });
               //////////////////////////////////////////////////
@@ -668,7 +665,6 @@ router.post(
                 errorMsg: error,
               });
             } else {
-              console.log(error);
               res.status(400).json({
                 error: "Error while creating adding assets",
                 errorMsg: error,
@@ -993,9 +989,17 @@ router.get("/filterOptions/", async (req: Request, res: Response) => {
     //@ts-ignore
     if (!category) {
       // get all brands whose category is mobile
-      const brands = await db("brands").select("name as brandName");
+      let brands = await db("brands")
+        .select("name as brandName")
+        .orderBy("name");
+
+      //get unique brands
+      brands = uniq(brands, "brandName");
 
       let filterOptions = await db("filters").select("fields", "filter_name");
+
+      //eliminate duplicate filter options
+      filterOptions = uniq(filterOptions, "fields");
 
       const brandsArr = brands?.map((brand) => {
         return { fields: brand.brandName, filter_name: "brandName" };
@@ -1045,7 +1049,7 @@ router.get("/filterOptions/", async (req: Request, res: Response) => {
         )
         .modify((queryBuilder) => {
           queryBuilder?.where(function () {
-            this.orWhere("filtercategories.categories", "common");
+            this.orWhere("filtercategories.categories", "other");
             if (typeof category === "string") {
               //@ts-ignore
               this.orWhere("filtercategories.categories", category);
@@ -1059,7 +1063,7 @@ router.get("/filterOptions/", async (req: Request, res: Response) => {
         });
 
       const brandsArr = brands?.map((brand: any) => {
-        return { fields: brand.brandName, filter_name: "brandName" };
+        return { fields: brand?.brandName, filter_name: "brandName" };
       });
 
       filterOptions = [...filterOptions, ...brandsArr];
@@ -1070,6 +1074,7 @@ router.get("/filterOptions/", async (req: Request, res: Response) => {
         r[a.filter_name].push(a.fields);
         return r;
       }, Object.create(null));
+
       res.status(200).json({
         message: `Filter options fetched successfully`,
         data: result,
