@@ -7,6 +7,7 @@ import multer from "multer";
 import fs from "fs";
 import csv from "csv-parser";
 import brands from "./brands";
+import { Ticket } from "./tickets";
 const upload = multer({ dest: "/tmp" });
 
 interface Asset {
@@ -139,111 +140,119 @@ router.get(
   "/singleAsset/:assetId",
 
   async (req: Request, res: Response) => {
-    const { assetId } = req.params;
-    if (!assetId) res.status(400).json({ error: "Asset Id is missing!" });
-    db.select(
-      "assets.assetId",
-      "brands.name as brandName",
-      "assets.name",
-      "assets.description",
-      "assets.modelNo",
-      "assets.status",
-      "assets.asset_location",
-      "assets.isRented",
-      "assets.vendor",
-      "assets.rent",
-      "assets.deposit",
-      "assets.rentStartDate",
-      "assets.rentEndDate",
-      "assets.processor",
-      "assets.screen_type",
-      "assets.category",
-      "assets.ram",
-      "assets.operating_system",
-      "assets.screen_size",
-      "assets.received_date",
-      "assets.ssd",
-      "assets.hdd",
-      "assets.os_version",
-      "assets.imeiNo",
-      "assets.make_year",
-      "assets.connectivity",
-      "assets.cableType",
-      "assets.is_active"
-    )
-      .from("assets")
-      .join("brands", "assets.brandId", "=", "brands.brandId")
-      .where("assets.assetId", "=", assetId)
-      //.where('assets.is_active', true)
-      .first()
-      .then(async (data) => {
-        if (data.status === "Allocated") {
-          db.select(
-            "assets.assetId",
-            "brands.name as brandName",
-            "assets.name",
-            "assets.description",
-            "assets.modelNo",
-            "assets.status",
-            //"assets.usability",
-            "employees.empId",
-            "employees.name as empName",
-            "assets.asset_location",
-            "assets.isRented",
-            "assets.vendor",
-            "assets.rent",
-            "assets.deposit",
-            "assets.rentStartDate",
-            "assets.rentEndDate",
-            "assets.processor",
-            "assets.screen_type",
-            "assets.category",
-            "assets.ram",
-            "assets.operating_system",
-            "assets.screen_size",
-            "assets.received_date",
-            "assets.ssd",
-            "assets.hdd",
-            "assets.os_version",
-            "assets.imeiNo",
-            "assets.make_year",
-            "assets.connectivity",
-            "assets.cableType",
-            "assets.is_active"
-          )
-            .from("assets")
-            .join("brands", "assets.brandId", "=", "brands.brandId")
-            .join(
-              "assetallocation",
-              "assetallocation.assetId",
-              "assets.assetId"
+    try {
+      
+      const { assetId } = req.params;
+      if (!assetId) res.status(400).json({ error: "Asset Id is missing!" });
+      const tickets = await db<Ticket>("tickets")
+      .select("*")
+      .where("assetId", "=", assetId)
+      console.log(tickets)
+      db.select(
+        "assets.assetId",
+        "brands.name as brandName",
+        "assets.name",
+        "assets.description",
+        "assets.modelNo",
+        "assets.status",
+        "assets.asset_location",
+        "assets.isRented",
+        "assets.vendor",
+        "assets.rent",
+        "assets.deposit",
+        "assets.rentStartDate",
+        "assets.rentEndDate",
+        "assets.processor",
+        "assets.screen_type",
+        "assets.category",
+        "assets.ram",
+        "assets.operating_system",
+        "assets.screen_size",
+        "assets.received_date",
+        "assets.ssd",
+        "assets.hdd",
+        "assets.os_version",
+        "assets.imeiNo",
+        "assets.make_year",
+        "assets.connectivity",
+        "assets.cableType",
+        "assets.is_active"
+      )
+        .from("assets")
+        .join("brands", "assets.brandId", "=", "brands.brandId")
+        .where("assets.assetId", "=", assetId)
+        
+        //.where('assets.is_active', true)
+        .first()
+        .then(async (data) => {
+          if (data.status === "Allocated") {
+            db.select(
+              "assets.assetId",
+              "brands.name as brandName",
+              "assets.name",
+              "assets.description",
+              "assets.modelNo",
+              "assets.status",
+              //"assets.usability",
+              "employees.empId",
+              "employees.name as empName",
+              "assets.asset_location",
+              "assets.isRented",
+              "assets.vendor",
+              "assets.rent",
+              "assets.deposit",
+              "assets.rentStartDate",
+              "assets.rentEndDate",
+              "assets.processor",
+              "assets.screen_type",
+              "assets.category",
+              "assets.ram",
+              "assets.operating_system",
+              "assets.screen_size",
+              "assets.received_date",
+              "assets.ssd",
+              "assets.hdd",
+              "assets.os_version",
+              "assets.imeiNo",
+              "assets.make_year",
+              "assets.connectivity",
+              "assets.cableType",
+              "assets.is_active"
             )
-            .join("employees", "assetallocation.empId", "employees.empId")
-            .where("assets.assetId", "=", assetId)
-            .first()
-            .then((data) => {
-              //console.log(data?.received_date)
-              res.status(200).json({ data: data });
-            })
-            .catch((error) =>
-              res.status(400).json({
-                error: "Error occured while fetching asset details",
-                errorMsg: error,
+              .from("assets")
+              .join("brands", "assets.brandId", "=", "brands.brandId")
+              .join(
+                "assetallocation",
+                "assetallocation.assetId",
+                "assets.assetId"
+              )
+              .join("employees", "assetallocation.empId", "employees.empId")
+              .where("assets.assetId", "=", assetId)
+              .first()
+              .then((data) => {
+                
+                //console.log(data?.received_date)
+                res.status(200).json({ data: {asset: data, tickets: tickets} });
               })
-            );
-        } else {
-          //  console.log({data})
-          res.status(200).json({
-            message: `Asset with assetId:${assetId} fetched successfully`,
-            data: data,
-          });
-        }
-      })
-      .catch((error) => {
-        res
-          .status(400)
-          .json({ error: "Error occured while fetching asset details" });
-      });
+              .catch((error) =>
+                res.status(400).json({
+                  error: "Error occured while fetching asset details",
+                  errorMsg: error,
+                })
+              );
+          } else {
+            //  console.log({data})
+            res.status(200).json({
+              message: `Asset with assetId:${assetId} fetched successfully`,
+              data:{asset: data, tickets: tickets},
+            });
+          }
+        })
+    } catch (error) {
+      res
+        .status(400)
+        .json({ error: "Error occured while fetching asset details" });
+    }
   }
 );
 
