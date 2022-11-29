@@ -9,6 +9,7 @@ import csv from "csv-parser";
 import brands from "./brands";
 import { Ticket } from "./tickets";
 const upload = multer({ dest: "/tmp" });
+import uniq from "lodash.uniqby";
 
 interface Asset {
   assetId?: number;
@@ -114,7 +115,7 @@ router.get("/", async (req, res: Response) => {
     .orderBy("assets.is_active", "desc")
     .modify((queryBuilder) => {
       if (allocate === "true") {
-        queryBuilder?.where("status", `surplus`);
+        queryBuilder?.where("status", `Surplus`);
       }
       if (isRented === "0" || isRented === "1") {
         queryBuilder?.where("isRented", "=", `${isRented}`);
@@ -419,7 +420,6 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
         errorMsg: error,
       });
     } else {
-      //console.log(error)
       res.status(400).json({
         error,
       });
@@ -480,7 +480,7 @@ router.post(
                   )
                   .modify((queryBuilder) => {
                     queryBuilder?.where(function () {
-                      this.orWhere("filtercategories.categories", "common");
+                      this.orWhere("filtercategories.categories", "other");
                       if (typeof result?.category === "string") {
                         //@ts-ignore
                         this.orWhere(
@@ -593,7 +593,7 @@ router.post(
                     );
                   }
                 }
-                console.log(result);
+
                 return result;
               });
               //////////////////////////////////////////////////
@@ -677,7 +677,6 @@ router.post(
                 errorMsg: error,
               });
             } else {
-              console.log(error);
               res.status(400).json({
                 error: "Error while creating adding assets",
                 errorMsg: error,
@@ -980,6 +979,7 @@ router.post("/filter", async (req: Request, res: Response) => {
         }
       })
       .where("assets.name", "like", `%${name}%`);
+      
     //send filtered assets in response
     res.status(200).json({
       message: "All assets fetched successfully",
@@ -1002,9 +1002,17 @@ router.get("/filterOptions/", async (req: Request, res: Response) => {
     //@ts-ignore
     if (!category) {
       // get all brands whose category is mobile
-      const brands = await db("brands").select("name as brandName");
+      let brands = await db("brands")
+        .select("name as brandName")
+        .orderBy("name");
+
+      //get unique brands
+      brands = uniq(brands, "brandName");
 
       let filterOptions = await db("filters").select("fields", "filter_name");
+
+      //eliminate duplicate filter options
+      filterOptions = uniq(filterOptions, "fields");
 
       const brandsArr = brands?.map((brand) => {
         return { fields: brand.brandName, filter_name: "brandName" };
@@ -1054,21 +1062,21 @@ router.get("/filterOptions/", async (req: Request, res: Response) => {
         )
         .modify((queryBuilder) => {
           queryBuilder?.where(function () {
-            this.orWhere("filtercategories.categories", "common");
+            this.orWhere("filtercategories.categories", "other");
             if (typeof category === "string") {
               //@ts-ignore
               this.orWhere("filtercategories.categories", category);
             } else {
               //@ts-ignore
               category?.map((category) =>
-                this.orWhere("filtercategories.categories", category)
+              this.orWhere("filtercategories.categories", category)
               );
             }
-          });
-        });
+          })
+        }).orderBy('filtercategories.categories','desc')
 
       const brandsArr = brands?.map((brand: any) => {
-        return { fields: brand.brandName, filter_name: "brandName" };
+        return { fields: brand?.brandName, filter_name: "brandName" };
       });
 
       filterOptions = [...filterOptions, ...brandsArr];
