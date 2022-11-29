@@ -480,7 +480,7 @@ router.post(
                   )
                   .modify((queryBuilder) => {
                     queryBuilder?.where(function () {
-                      this.orWhere("filtercategories.categories", "common");
+                      this.orWhere("filtercategories.categories", "other");
                       if (typeof result?.category === "string") {
                         //@ts-ignore
                         this.orWhere(
@@ -1054,7 +1054,7 @@ router.get("/filterOptions/", async (req: Request, res: Response) => {
         )
         .modify((queryBuilder) => {
           queryBuilder?.where(function () {
-            this.orWhere("filtercategories.categories", "common");
+            this.orWhere("filtercategories.categories", "other");
             if (typeof category === "string") {
               //@ts-ignore
               this.orWhere("filtercategories.categories", category);
