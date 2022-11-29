@@ -40,7 +40,7 @@ router.post("/createTicket", isAuth, async (req: Request, res: Response) => {
 
   const receipents = [email, "msbhadane708@gmail.com"];
   const mailOptions = {
-    from: "mahesh.bhadane@torinit.ca",
+    from: "drashti.ghelani@torinit.ca",
     to: receipents,
     subject: "New Ticket Created",
     html: `<div style="padding:30px;border-style: ridge;width:500px; height:500px ; margin-left:auto;margin-right:auto;">
