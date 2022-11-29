@@ -468,7 +468,7 @@ router.post(
                   )
                   .modify((queryBuilder) => {
                     queryBuilder?.where(function () {
-                      this.orWhere("filtercategories.categories", "common");
+                      this.orWhere("filtercategories.categories", "other");
                       if (typeof result?.category === "string") {
                         //@ts-ignore
                         this.orWhere(
@@ -1056,11 +1056,11 @@ router.get("/filterOptions/", async (req: Request, res: Response) => {
             } else {
               //@ts-ignore
               category?.map((category) =>
-                this.orWhere("filtercategories.categories", category)
+              this.orWhere("filtercategories.categories", category)
               );
             }
-          });
-        });
+          })
+        }).orderBy('filtercategories.categories','desc')
 
       const brandsArr = brands?.map((brand: any) => {
         return { fields: brand?.brandName, filter_name: "brandName" };
