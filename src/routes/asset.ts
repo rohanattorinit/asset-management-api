@@ -498,9 +498,8 @@ router.post(
                       return key.toLowerCase()
                     })
                     const requiredFields = [...requiredColumns, "description", "name", "assetType", "modelNo", "make_year", "received_date" ]
-                    if(result?.category.toLowerCase() === "mobile"){
-                      requiredFields?.push("imeiNo")
-                    }
+                    if(result?.category.toLowerCase() === "mobile") requiredFields?.push("imeiNo")
+                    
                      if(result?.category.toLowerCase() === "mobile"||result?.category.toLowerCase() === "laptop" || result?.category.toLowerCase() === "watch"){
                       requiredFields?.push("os_version")
                      }
@@ -513,21 +512,41 @@ router.post(
 
                       const dataFields = Object.keys(result)
                       const rentedKeys = ["vendor","rent","deposit", "rentStartDate", "rentEndDate", "empId", "allocationTime", "brandName" , "isRented"]   
-                            
+                      const dateKeys = ["rentStartDate", "rentEndDate", "allocationTime", "received_date"]
+                      const  dateIsValid = (dateStr: string)=> {
+                        const regex = /^\d{4}-\d{2}-\d{2}$/;
+                      
+                        if (dateStr.match(regex) === null) {
+                          return false;
+                        }
+                      
+                        const date = new Date(dateStr);
+                      
+                        const timestamp = date.getTime();
+                      
+                        if (typeof timestamp !== 'number' || Number.isNaN(timestamp)) {
+                          return false;
+                        }
+                      
+                        return date.toISOString().startsWith(dateStr);
+                      }
                       dataFields?.map(item => {
                          // @ts-ignore
                          const value = result[item]
-                          if(item === "isRented" && value === 0){
-                            delete result?.vendor
-                            delete result?.rent
-                            delete result?.deposit
-                            delete result?.rentStartDate
-                            delete result?.rentEndDate
-                          } else if(!requiredFields?.includes(item) && !rentedKeys?.includes(item) ){
-                            // @ts-ignore
-                            delete result[item] 
-                          }
-  
+                         if(value !== '' && dateKeys.includes(item)){
+                           if(!dateIsValid(value)){
+                             throw new Error( `"${result?.name}" asset doesn't have a valid format ${value} of date `)
+                           }
+                         } else if(item === "isRented" && value === 0){
+                          delete result?.vendor
+                          delete result?.rent
+                          delete result?.deposit
+                          delete result?.rentStartDate
+                          delete result?.rentEndDate
+                        } else if(!requiredFields?.includes(item) && !rentedKeys?.includes(item) ){
+                          // @ts-ignore
+                          delete result[item] 
+                        }
                       })
                       ///// brandcheck
                     const brand = await db("brands")
@@ -609,15 +628,11 @@ router.post(
                 error : "duplicate Data",
                 errorMsg: error,
               })
-            } else if(error?.toString().includes('required')){
+            } else if(error?.toString().includes('asset')){
               res.status(400).json({
                 error: `${error}`,
                 errorMsg: error
               })
-            } else if(error?.toString().includes('exist')){
-              res.status(400).json({
-                  error: `${error}`,
-                  errorMsg: error })
             } else  if(error?.toString().includes('csv')){
               res.status(400).json({
                   error: `${error}`,
