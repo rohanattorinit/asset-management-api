@@ -4,7 +4,7 @@ const router = express.Router();
 import db from "../config/connection";
 import moment from "moment";
 import { sendMail } from "../utils/sendEmail";
-export interface Ticket {
+interface Ticket {
   ticketId?: number;
   empId: number;
   assetId: number;
@@ -38,7 +38,7 @@ router.post("/createTicket", isAuth, async (req: Request, res: Response) => {
     .where("empId", empId)
     .first();
 
-  const receipents = [email, "drashti.ghelani@torinit.ca" ];
+  const receipents = [email, "msbhadane708@gmail.com"];
   const mailOptions = {
     from: "mahesh.bhadane@torinit.ca",
     to: receipents,
