@@ -61,6 +61,8 @@ router.post("/createTicket", isAuth, async (req: Request, res: Response) => {
             
              <p><span style="color:#202020;font-family:helvetica;font-size:15px;line-height:15px"> Emp Name : <span><span>${name}</span></span></span></p>
              
+             <p><span style="color:#202020;font-family:helvetica;font-size:15px;line-height:15px"> Date & Time : <span><span>${ticket.createdAt}</span></span></span></p>
+             
              <p><span style="color:#202020;font-family:helvetica;font-size:15px;line-height:15px"> AssetId : <span><span>${ticket.assetId}</span></span></span></p>
              
              <p><span style="color:#202020;font-family:helvetica;font-size:15px;line-height:15px"> Title : <span><span>${ticket.title}</span></span></span></p>
