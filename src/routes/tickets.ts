@@ -4,7 +4,7 @@ const router = express.Router();
 import db from "../config/connection";
 import moment from "moment";
 import { sendMail } from "../utils/sendEmail";
-interface Ticket {
+export interface Ticket {
   ticketId?: number;
   empId: number;
   assetId: number;

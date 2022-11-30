@@ -7,7 +7,7 @@ import multer from "multer";
 import fs from "fs";
 import csv from "csv-parser";
 import brands from "./brands";
-import { Ticket } from "./tickets";
+import { Ticket} from "./tickets"
 const upload = multer({ dest: "/tmp" });
 import uniq from "lodash.uniqby";
 
