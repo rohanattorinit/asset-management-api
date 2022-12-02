@@ -84,34 +84,37 @@ router.post(
         .pipe(csv())
         .on("data", (data) => results.push(data))
         .on("end", async () => {
-          try{
-          const employees = results.map(async (result: EmployeeType) => {
-            const hash = await generateHash(result.email);
-            result.password = hash;
-            return result;
-          });
+          try {
+            const employees = results.map(async (result: EmployeeType) => {
+              const hash = await generateHash(result.email);
+              result.password = hash;
+              return result;
+            });
 
-          const employeeData = await Promise.all(employees)
-          await db<EmployeeType>("employees")
-              .insert(employeeData as unknown as EmployeeType)
-                res.status(200).json({
-                  message: "Employee added Successfully!",
-                });
-        
-        }  catch(error: any){
-            if(error?.code === "ER_DUP_ENTRY" ){
+            const employeeData = await Promise.all(employees);
+            await db<EmployeeType>("employees").insert(
+              employeeData as unknown as EmployeeType
+            );
+            res.status(200).json({
+              message: "Employee added Successfully!",
+            });
+          } catch (error: any) {
+            if (error?.code === "ER_DUP_ENTRY") {
               res.status(400).json({
-                error : "duplicate Data",
+                error: "duplicate Data",
                 errorMsg: error,
-              })
-            }  else {
-              console.log(error)
-              res.status(400).json({ error: "Error while creating adding employees" ,  errorMsg: error  })
+              });
+            } else {
+              console.log(error);
+              res.status(400).json({
+                error: "Error while creating adding employees",
+                errorMsg: error,
+              });
             }
           }
         });
     } catch (error) {
-      console.log({error})
+      console.log({ error });
       res.status(400).json({
         error: "Error while creating adding employees",
       });
@@ -121,12 +124,14 @@ router.post(
 
 //get all employees
 
-router.get("/",isAuth,isAdmin,  async (req, res: Response) => {
+router.get("/", isAuth, isAdmin, async (req, res: Response) => {
   const name = req?.query?.name;
 
   db.select("*")
     .from("employees")
-    .where('is_active',true)
+    // .where('is_active',true)
+    .orderBy("employees.is_active", "desc")
+    .orderBy("name")
     .modify((queryBuilder) => {
       if (name) {
         queryBuilder?.where("name", "like", `%${name}%`);
@@ -139,9 +144,10 @@ router.get("/",isAuth,isAdmin,  async (req, res: Response) => {
       });
     })
     .catch((error) => {
-      res
-        .status(400)
-        .json({ error: "Error occured while trying to fetch employees",errorMsg:error});
+      res.status(400).json({
+        error: "Error occured while trying to fetch employees",
+        errorMsg: error,
+      });
     });
 });
 
@@ -175,14 +181,17 @@ router.post("/update/:id", isAuth, async (req: Request, res: Response) => {
   };
 
   db<EmployeeType>("employees")
-  .where("empId", id)
-  .update(employee)
-  .then(() => {
-    res.status(200).json({message:'Profile Updated successfully!'})
-  })
-  .catch((error) => {
-    res.status(400).json({ error:'An error occured while trying to update profile',errorMsg:error})
-  })
+    .where("empId", id)
+    .update(employee)
+    .then(() => {
+      res.status(200).json({ message: "Profile Updated successfully!" });
+    })
+    .catch((error) => {
+      res.status(400).json({
+        error: "An error occured while trying to update profile",
+        errorMsg: error,
+      });
+    });
 });
 
 //delete an employee
@@ -192,16 +201,49 @@ router.post("/delete/:id", async (req: Request, res: Response) => {
     .where("empId", id)
     .del()
     .then(() => {
-      db('employees')
-      .where('empId',id)
-      .update({'is_active':false})
-      .then(()=>res.status(200).json({ message: "Employee Deleted successfully" }))
-      .catch((error) => {
-        res.status(400).json({ error:'An error occured while trying to delete profile',errorMsg:error})
+      db("employees")
+        .where("empId", id)
+        .update({ is_active: false })
+        .then(() =>
+          res.status(200).json({ message: "Employee Deleted successfully" })
+        )
+        .catch((error) => {
+          res.status(400).json({
+            error: "An error occured while trying to delete profile",
+            errorMsg: error,
+          });
+        })
+        .catch((error) => {
+          res.status(400).json({
+            error: "An error occured while trying to delete profile",
+            errorMsg: error,
+          });
+        });
+    });
+});
+
+//reactive an employee
+router.post("/reactive/:id", async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  db("employees")
+    .where("empId", id)
+    .update({ is_active: true })
+    .then(() =>
+      res.status(200).json({ message: "Employee Activated successfully" })
+    )
+    .catch((error) => {
+      res.status(400).json({
+        error: "An error occured while trying to delete profile",
+        errorMsg: error,
+      });
     })
     .catch((error) => {
-      res.status(400).json({ error:'An error occured while trying to delete profile',errorMsg:error})
-    })
-})
-})
+      res.status(400).json({
+        error: "An error occured while trying to delete profile",
+        errorMsg: error,
+      });
+    });
+});
+
 export default router;
