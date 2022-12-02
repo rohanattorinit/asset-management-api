@@ -127,6 +127,7 @@ router.get("/",isAuth,isAdmin,  async (req, res: Response) => {
   db.select("*")
     .from("employees")
     .where('is_active',true)
+    .orderBy("name")
     .modify((queryBuilder) => {
       if (name) {
         queryBuilder?.where("name", "like", `%${name}%`);
