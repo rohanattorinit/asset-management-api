@@ -38,7 +38,7 @@ router.post("/createTicket", isAuth, async (req: Request, res: Response) => {
     .where("empId", empId)
     .first();
 
-  const receipents = [email, "drashti.ghelani@torinit.ca"];
+  const receipents = [email, "mahesh.bhadane@torinit.ca"];
   const mailOptions = {
     from: "mahesh.bhadane@torinit.ca",
     to: receipents,
