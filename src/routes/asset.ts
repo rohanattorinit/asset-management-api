@@ -83,6 +83,8 @@ interface Filters {
 //get all assets
 router.get("/", async (req, res: Response) => {
   const { name, isRented, allocate } = req?.query;
+
+  
   db<Asset>("assets")
     .select(
       "assets.assetId",
@@ -148,7 +150,6 @@ router.get(
       const tickets = await db<Ticket>("tickets")
       .select("*")
       .where("assetId", "=", assetId)
-      console.log(tickets)
       db.select(
         "assets.assetId",
         "brands.name as brandName",
@@ -232,7 +233,6 @@ router.get(
               .first()
               .then((data) => {
                 
-                //console.log(data?.received_date)
                 res.status(200).json({ data: {asset: data, tickets: tickets} });
               })
               .catch((error) =>
@@ -242,7 +242,6 @@ router.get(
                 })
               );
           } else {
-            //  console.log({data})
             res.status(200).json({
               message: `Asset with assetId:${assetId} fetched successfully`,
               data:{asset: data, tickets: tickets},

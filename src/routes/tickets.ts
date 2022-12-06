@@ -38,7 +38,7 @@ router.post("/createTicket", isAuth, async (req: Request, res: Response) => {
     .where("empId", empId)
     .first();
 
-  const receipents = [email, "drashti.ghelani@torinit.ca"];
+  const receipents = [email, "mahesh.bhadane@torinit.ca"];
   const mailOptions = {
     from: "mahesh.bhadane@torinit.ca",
     to: receipents,
@@ -60,6 +60,8 @@ router.post("/createTicket", isAuth, async (req: Request, res: Response) => {
             <p><span style="color:#202020;font-family:helvetica;font-size:15px;line-height:15px"> EmpId : <span><span>${ticket.empId}</span></span></span></p>
             
              <p><span style="color:#202020;font-family:helvetica;font-size:15px;line-height:15px"> Emp Name : <span><span>${name}</span></span></span></p>
+             
+             <p><span style="color:#202020;font-family:helvetica;font-size:15px;line-height:15px"> Date & Time : <span><span>${ticket.createdAt}</span></span></span></p>
              
              <p><span style="color:#202020;font-family:helvetica;font-size:15px;line-height:15px"> AssetId : <span><span>${ticket.assetId}</span></span></span></p>
              

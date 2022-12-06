@@ -105,7 +105,6 @@ router.post(
                 errorMsg: error,
               });
             } else {
-              console.log(error);
               res.status(400).json({
                 error: "Error while creating adding employees",
                 errorMsg: error,
@@ -114,7 +113,6 @@ router.post(
           }
         });
     } catch (error) {
-      console.log({ error });
       res.status(400).json({
         error: "Error while creating adding employees",
       });
@@ -129,8 +127,10 @@ router.get("/", isAuth, isAdmin, async (req, res: Response) => {
 
   db.select("*")
     .from("employees")
+
     // .where('is_active',true)
     .orderBy("employees.is_active", "desc")
+
     .orderBy("name")
     .modify((queryBuilder) => {
       if (name) {
