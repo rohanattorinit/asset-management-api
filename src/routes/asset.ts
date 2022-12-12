@@ -7,7 +7,7 @@ import multer from "multer";
 import fs from "fs";
 import csv from "csv-parser";
 import brands from "./brands";
-import { Ticket} from "./tickets"
+import { Ticket } from "./tickets";
 const upload = multer({ dest: "/tmp" });
 import uniq from "lodash.uniqby";
 
@@ -84,7 +84,6 @@ interface Filters {
 router.get("/", async (req, res: Response) => {
   const { name, isRented, allocate } = req?.query;
 
-  
   db<Asset>("assets")
     .select(
       "assets.assetId",
@@ -144,12 +143,11 @@ router.get(
 
   async (req: Request, res: Response) => {
     try {
-      
       const { assetId } = req.params;
       if (!assetId) res.status(400).json({ error: "Asset Id is missing!" });
       const tickets = await db<Ticket>("tickets")
-      .select("*")
-      .where("assetId", "=", assetId)
+        .select("*")
+        .where("assetId", "=", assetId);
       db.select(
         "assets.assetId",
         "brands.name as brandName",
@@ -183,7 +181,7 @@ router.get(
         .from("assets")
         .join("brands", "assets.brandId", "=", "brands.brandId")
         .where("assets.assetId", "=", assetId)
-        
+
         //.where('assets.is_active', true)
         .first()
         .then(async (data) => {
@@ -195,7 +193,6 @@ router.get(
               "assets.description",
               "assets.modelNo",
               "assets.status",
-              //"assets.usability",
               "employees.empId",
               "employees.name as empName",
               "assets.asset_location",
@@ -232,8 +229,9 @@ router.get(
               .where("assets.assetId", "=", assetId)
               .first()
               .then((data) => {
-                
-                res.status(200).json({ data: {asset: data, tickets: tickets} });
+                res
+                  .status(200)
+                  .json({ data: { asset: data, tickets: tickets } });
               })
               .catch((error) =>
                 res.status(400).json({
@@ -244,10 +242,10 @@ router.get(
           } else {
             res.status(200).json({
               message: `Asset with assetId:${assetId} fetched successfully`,
-              data:{asset: data, tickets: tickets},
+              data: { asset: data, tickets: tickets },
             });
           }
-        })
+        });
     } catch (error) {
       res
         .status(400)
@@ -403,7 +401,6 @@ router.post("/addAsset", isAuth, isAdmin, async (req, res) => {
         assetId: id?.assetId,
         allocationtime: allocationTime,
       };
-
       await db("assetallocation").insert(allocateObj);
     } else {
       await db<Asset>("assets").insert(asset);
@@ -455,21 +452,22 @@ const exists = async (key: string, value: any) => {
 router.post(
   "/create-bulk",
   isAuth,
-  isAdmin, upload.single("csvFile") ,
-  
-  async (req: Request, res: Response ,next: NextFunction) => {
+  isAdmin,
+  upload.single("csvFile"),
+
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const results: Asset[] = [];
-        fs.createReadStream(req.file?.path!)
+      const results: Asset[] = [];
+      fs.createReadStream(req.file?.path!)
         .pipe(csv())
         .on("data", (data: Asset) => results?.push(data))
         .on("end", async () => {
-          try{
-            if(results?.length === 0){
-              throw new Error( `csv file is empty please check csv file data`)
-            }else{
-                const allAssets = results?.map(async(result: any) => {
-                  let filterOptions = await db("filters")
+          try {
+            if (results?.length === 0) {
+              throw new Error(`csv file is empty please check csv file data`);
+            } else {
+              const allAssets = results?.map(async (result: any) => {
+                let filterOptions = await db("filters")
                   .select("fields", "filter_name")
                   .join(
                     "filtercategories",
@@ -481,156 +479,204 @@ router.post(
                       this.orWhere("filtercategories.categories", "other");
                       if (typeof result?.category === "string") {
                         //@ts-ignore
-                        this.orWhere("filtercategories.categories", result?.category);
-                      } 
-                    })
-                  }).orderBy('filtercategories.categories','desc')
-    
-                    const filterr = filterOptions?.reduce(function (r:any, a:any) {
-                      r[a.filter_name] = r[a.filter_name] || [];
-                      r[a.filter_name].push(a.fields);
-                      return r;
-                    }, Object.create(null));
-              
-  
-                    const requiredColumns: string[] = Object.keys(filterr)?.map((key:string)=>{
-                      return key.toLowerCase()
-                    })
-                    const requiredFields = [...requiredColumns, "description", "name", "assetType", "modelNo", "make_year", "received_date" ]
-                    if(result?.category.toLowerCase() === "mobile"){
-                      requiredFields?.push("imeiNo")
-                    }
-                     if(result?.category.toLowerCase() === "mobile"||result?.category.toLowerCase() === "laptop" || result?.category.toLowerCase() === "watch"){
-                      requiredFields?.push("os_version")
-                     }
-                    requiredFields?.map(item => {
-                      // @ts-ignore                          
-                      if(!result[item]?.length > 0) {                      
-                        throw new Error( `"${result?.name}" asset doesn't have a required field " ${item}"`)
-                      }                  
-                      })
-
-                      const dataFields = Object.keys(result)
-                      const rentedKeys = ["vendor","rent","deposit", "rentStartDate", "rentEndDate", "empId", "allocationTime", "brandName" , "isRented"]   
-                            
-                      dataFields?.map(item => {
-                         // @ts-ignore
-                         const value = result[item]
-                          if(item === "isRented" && value === 0){
-                            delete result?.vendor
-                            delete result?.rent
-                            delete result?.deposit
-                            delete result?.rentStartDate
-                            delete result?.rentEndDate
-                          } else if(!requiredFields?.includes(item) && !rentedKeys?.includes(item) ){
-                            // @ts-ignore
-                            delete result[item] 
-                          }
-  
-                      })
-                      ///// brandcheck
-                    const brand = await db("brands")
-                    .select("brandId")
-                    .where("name", "=", result?.brandName)
-                    if(!brand[0]?.brandId){
-                     throw new Error( `Brand: ${result?.brandName} doesn't exist!`)
-                   }
-                      delete result["brandName"];
-                      result.brandId = brand[0]?.brandId;
-                     if(filterr?.status.includes(result?.status) && result?.status.toLowerCase() === "allocated"){
-                         const exist = await exists("empId" ,result?.empId)
-                           if(!exist) {
-                             throw new Error( `"${result?.name}" asset doesn't have a valid Employee Id`)
-                         }
+                        this.orWhere(
+                          "filtercategories.categories",
+                          result?.category
+                        );
                       }
-                      return result;
+                    });
+                  })
+                  .orderBy("filtercategories.categories", "desc");
 
-            });
-            //////////////////////////////////////////////////
-            const resAssets: Asset[] = await Promise.all(allAssets)
+                const filterr = filterOptions?.reduce(function (
+                  r: any,
+                  a: any
+                ) {
+                  r[a.filter_name] = r[a.filter_name] || [];
+                  r[a.filter_name].push(a.fields);
+                  return r;
+                },
+                Object.create(null));
+
+                const requiredColumns: string[] = Object.keys(filterr)?.map(
+                  (key: string) => {
+                    return key.toLowerCase();
+                  }
+                );
+                const requiredFields = [
+                  ...requiredColumns,
+                  "description",
+                  "name",
+                  "assetType",
+                  "modelNo",
+                  "make_year",
+                  "received_date",
+                ];
+                if (result?.category.toLowerCase() === "mobile") {
+                  requiredFields?.push("imeiNo");
+                }
+                if (
+                  result?.category.toLowerCase() === "mobile" ||
+                  result?.category.toLowerCase() === "laptop" ||
+                  result?.category.toLowerCase() === "watch"
+                ) {
+                  requiredFields?.push("os_version");
+                }
+                requiredFields?.map((item) => {
+                  // @ts-ignore
+                  if (!result[item]?.length > 0) {
+                    throw new Error(
+                      `"${result?.name}" asset doesn't have a required field " ${item}"`
+                    );
+                  }
+                });
+
+                const dataFields = Object.keys(result);
+                const rentedKeys = [
+                  "vendor",
+                  "rent",
+                  "deposit",
+                  "rentStartDate",
+                  "rentEndDate",
+                  "empId",
+                  "allocationTime",
+                  "brandName",
+                  "isRented",
+                ];
+
+                dataFields?.map((item) => {
+                  // @ts-ignore
+                  const value = result[item];
+                  if (item === "isRented" && value === 0) {
+                    delete result?.vendor;
+                    delete result?.rent;
+                    delete result?.deposit;
+                    delete result?.rentStartDate;
+                    delete result?.rentEndDate;
+                  } else if (
+                    !requiredFields?.includes(item) &&
+                    !rentedKeys?.includes(item)
+                  ) {
+                    // @ts-ignore
+                    delete result[item];
+                  }
+                });
+                ///// brandcheck
+                const brand = await db("brands")
+                  .select("brandId")
+                  .where("name", "=", result?.brandName);
+                if (!brand[0]?.brandId) {
+                  throw new Error(`Brand: ${result?.brandName} doesn't exist!`);
+                }
+                delete result["brandName"];
+                result.brandId = brand[0]?.brandId;
+                if (
+                  filterr?.status.includes(result?.status) &&
+                  result?.status.toLowerCase() === "allocated"
+                ) {
+                  const exist = await exists("empId", result?.empId);
+                  if (!exist) {
+                    throw new Error(
+                      `"${result?.name}" asset doesn't have a valid Employee Id`
+                    );
+                  }
+                }
+                return result;
+              });
+              //////////////////////////////////////////////////
+              const resAssets: Asset[] = await Promise.all(allAssets);
               const allocatedEmp = resAssets?.map((asset) => {
-                if(asset?.status.toLowerCase() === "allocated"){
+                if (asset?.status.toLowerCase() === "allocated") {
                   const obj = {
                     empId: asset?.empId,
                     modelNo: asset?.modelNo,
-                    allocationTime: asset?.allocationTime
-                  }
-                  return obj
+                    allocationTime: asset?.allocationTime,
+                  };
+                  return obj;
                 }
-              })
-            const refineAssets = resAssets?.map((asset) => {
-              const dataFields = Object.keys(asset)             
-              dataFields?.map(item => {
-                 // @ts-ignore
-                  if(asset[item].length === 0) {
-                  // @ts-ignore                          
-                  delete asset[item]
-                  }  
-              })
-              delete asset?.empId
-              delete asset?.allocationTime
-              return asset
-            })
-             /////// asset allocation
-            await db<Asset>("assets").insert(refineAssets as unknown as Asset)
-            const insertedAssets = await  db<Asset>("assets").select("*")
-            const allocateData = insertedAssets?.filter((el) => el?.status.toLowerCase() === "allocated")
-            const allocateinsertdata: any = [];
-            allocatedEmp?.map((elobj) =>{
-               allocateData?.map((asset) =>{
-                if(asset?.modelNo === elobj?.modelNo){
-                  const allocationobj= {
-                    empId: elobj?.empId,
-                    assetId: asset?.assetId,
-                    allocationTime: elobj?.allocationTime
+              });
+              const refineAssets = resAssets?.map((asset) => {
+                const dataFields = Object.keys(asset);
+                dataFields?.map((item) => {
+                  // @ts-ignore
+                  if (asset[item].length === 0) {
+                    // @ts-ignore
+                    delete asset[item];
                   }
-                  allocateinsertdata.push(allocationobj)
-                }
-              })
-            })
-            if(allocateinsertdata?.length !== 0 ){
-              await db("assetallocation").insert(allocateinsertdata as any)
-              res.status(201).json({
-                message: 'Asset created successfully'
-              })
-              next()
-            } else{
-              res.status(201).json({
-                message: 'Asset created successfully'
-              })
-              next()
+                });
+                delete asset?.empId;
+                delete asset?.allocationTime;
+                return asset;
+              });
+              /////// asset allocation
+              await db<Asset>("assets").insert(
+                refineAssets as unknown as Asset
+              );
+              const insertedAssets = await db<Asset>("assets").select("*");
+              const allocateData = insertedAssets?.filter(
+                (el) => el?.status.toLowerCase() === "allocated"
+              );
+              const allocateinsertdata: any = [];
+              allocatedEmp?.map((elobj) => {
+                allocateData?.map((asset) => {
+                  if (asset?.modelNo === elobj?.modelNo) {
+                    const allocationobj = {
+                      empId: elobj?.empId,
+                      assetId: asset?.assetId,
+                      allocationTime: elobj?.allocationTime,
+                    };
+                    allocateinsertdata.push(allocationobj);
+                  }
+                });
+              });
+              if (allocateinsertdata?.length !== 0) {
+                await db("assetallocation").insert(allocateinsertdata as any);
+                res.status(201).json({
+                  message: "Asset created successfully",
+                });
+                next();
+              } else {
+                res.status(201).json({
+                  message: "Asset created successfully",
+                });
+                next();
+              }
             }
-          }
-            
-          } catch(error: any){
-            if(error?.code === "ER_DUP_ENTRY" ){
+          } catch (error: any) {
+            if (error?.code === "ER_DUP_ENTRY") {
               res.status(400).json({
-                error : "duplicate Data",
+                error: "duplicate Data",
                 errorMsg: error,
-              })
-            } else if(error?.toString().includes('required')){
+              });
+            } else if (error?.toString().includes("required")) {
               res.status(400).json({
                 error: `${error}`,
-                errorMsg: error
-              })
-            } else if(error?.toString().includes('exist')){
+                errorMsg: error,
+              });
+            } else if (error?.toString().includes("exist")) {
               res.status(400).json({
-                  error: `${error}`,
-                  errorMsg: error })
-            } else  if(error?.toString().includes('csv')){
+                error: `${error}`,
+                errorMsg: error,
+              });
+            } else if (error?.toString().includes("csv")) {
               res.status(400).json({
-                  error: `${error}`,
-                  errorMsg: error })
+                error: `${error}`,
+                errorMsg: error,
+              });
             } else {
-              res.status(400).json({ error: "Error while creating adding assets" ,  errorMsg: error  })
+              res
+                .status(400)
+                .json({
+                  error: "Error while creating adding assets",
+                  errorMsg: error,
+                });
             }
           }
         });
-
-      
-    } catch (error:any) {
-      
-        res.status(400).json({ error: "Error while creating adding assets" ,  errorMsg: error  })
+    } catch (error: any) {
+      res
+        .status(400)
+        .json({ error: "Error while creating adding assets", errorMsg: error });
     }
   }
 );
@@ -922,7 +968,7 @@ router.post("/filter", async (req: Request, res: Response) => {
         }
       })
       .where("assets.name", "like", `%${name}%`);
-      
+
     //send filtered assets in response
     res.status(200).json({
       message: "All assets fetched successfully",
@@ -1012,11 +1058,12 @@ router.get("/filterOptions/", async (req: Request, res: Response) => {
             } else {
               //@ts-ignore
               category?.map((category) =>
-              this.orWhere("filtercategories.categories", category)
+                this.orWhere("filtercategories.categories", category)
               );
             }
-          })
-        }).orderBy('filtercategories.categories','desc')
+          });
+        })
+        .orderBy("filtercategories.categories", "desc");
 
       const brandsArr = brands?.map((brand: any) => {
         return { fields: brand?.brandName, filter_name: "brandName" };
