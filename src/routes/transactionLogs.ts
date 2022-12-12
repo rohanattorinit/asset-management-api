@@ -91,7 +91,8 @@ router.get("/categoryCount", async (req: Request, res: Response) => {
         db("assets").count("*").where({ status: "Broken" }).as("brokenAssets"),
         db("assets")
           .count("*")
-          .where({ status: "Surplus" || "Allocated" })
+          .where({ status: "Surplus" })
+          .orWhere({status:"Allocated"})
           .andWhere({ is_active: true })
           .as("WorkingAssets")
       )
