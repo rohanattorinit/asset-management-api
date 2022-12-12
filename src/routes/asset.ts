@@ -479,112 +479,92 @@ router.post(
                       this.orWhere("filtercategories.categories", "other");
                       if (typeof result?.category === "string") {
                         //@ts-ignore
-                        this.orWhere(
-                          "filtercategories.categories",
-                          result?.category
-                        );
+                        this.orWhere("filtercategories.categories", result?.category);
+                      } 
+                    })
+                  }).orderBy('filtercategories.categories','desc')
+    
+                    const filterr = filterOptions?.reduce(function (r:any, a:any) {
+                      r[a.filter_name] = r[a.filter_name] || [];
+                      r[a.filter_name].push(a.fields);
+                      return r;
+                    }, Object.create(null));
+              
+  
+                    const requiredColumns: string[] = Object.keys(filterr)?.map((key:string)=>{
+                      return key.toLowerCase()
+                    })
+                    const requiredFields = [...requiredColumns, "description", "name", "assetType", "modelNo", "make_year", "received_date" ]
+                    if(result?.category.toLowerCase() === "mobile") requiredFields?.push("imeiNo")
+                    
+                     if(result?.category.toLowerCase() === "mobile"||result?.category.toLowerCase() === "laptop" || result?.category.toLowerCase() === "watch"){
+                      requiredFields?.push("os_version")
+                     }
+                    requiredFields?.map(item => {
+                      // @ts-ignore                          
+                      if(!result[item]?.length > 0) {                      
+                        throw new Error( `"${result?.name}" asset doesn't have a required field " ${item}"`)
+                      }                  
+                      })
+
+                      const dataFields = Object.keys(result)
+                      const rentedKeys = ["vendor","rent","deposit", "rentStartDate", "rentEndDate", "empId", "allocationTime", "brandName" , "isRented"]   
+                      const dateKeys = ["rentStartDate", "rentEndDate", "allocationTime", "received_date"]
+                      const  dateIsValid = (dateStr: string)=> {
+                        const regex = /^\d{4}-\d{2}-\d{2}$/;
+                      
+                        if (dateStr.match(regex) === null) {
+                          return false;
+                        }
+                      
+                        const date = new Date(dateStr);
+                      
+                        const timestamp = date.getTime();
+                      
+                        if (typeof timestamp !== 'number' || Number.isNaN(timestamp)) {
+                          return false;
+                        }
+                      
+                        return date.toISOString().startsWith(dateStr);
                       }
-                    });
-                  })
-                  .orderBy("filtercategories.categories", "desc");
+                      dataFields?.map(item => {
+                         // @ts-ignore
+                         const value = result[item]
+                         if(value !== '' && dateKeys.includes(item)){
+                           if(!dateIsValid(value)){
+                             throw new Error( `"${result?.name}" asset doesn't have a valid format ${value} of date `)
+                           }
+                         } else if(item === "isRented" && value === 0){
+                          delete result?.vendor
+                          delete result?.rent
+                          delete result?.deposit
+                          delete result?.rentStartDate
+                          delete result?.rentEndDate
+                        } else if(!requiredFields?.includes(item) && !rentedKeys?.includes(item) ){
+                          // @ts-ignore
+                          delete result[item] 
+                        }
+                      })
+                      ///// brandcheck
+                    const brand = await db("brands")
+                    .select("brandId")
+                    .where("name", "=", result?.brandName)
+                    if(!brand[0]?.brandId){
+                     throw new Error( `Brand: ${result?.brandName} doesn't exist!`)
+                   }
+                      delete result["brandName"];
+                      result.brandId = brand[0]?.brandId;
+                     if(filterr?.status.includes(result?.status) && result?.status.toLowerCase() === "allocated"){
+                         const exist = await exists("empId" ,result?.empId)
+                           if(!exist) {
+                             throw new Error( `"${result?.name}" asset doesn't have a valid Employee Id`)
+                         }
+                      }
+                      return result;
 
-                const filterr = filterOptions?.reduce(function (
-                  r: any,
-                  a: any
-                ) {
-                  r[a.filter_name] = r[a.filter_name] || [];
-                  r[a.filter_name].push(a.fields);
-                  return r;
-                },
-                Object.create(null));
-
-                const requiredColumns: string[] = Object.keys(filterr)?.map(
-                  (key: string) => {
-                    return key.toLowerCase();
-                  }
-                );
-                const requiredFields = [
-                  ...requiredColumns,
-                  "description",
-                  "name",
-                  "assetType",
-                  "modelNo",
-                  "make_year",
-                  "received_date",
-                ];
-                if (result?.category.toLowerCase() === "mobile") {
-                  requiredFields?.push("imeiNo");
-                }
-                if (
-                  result?.category.toLowerCase() === "mobile" ||
-                  result?.category.toLowerCase() === "laptop" ||
-                  result?.category.toLowerCase() === "watch"
-                ) {
-                  requiredFields?.push("os_version");
-                }
-                requiredFields?.map((item) => {
-                  // @ts-ignore
-                  if (!result[item]?.length > 0) {
-                    throw new Error(
-                      `"${result?.name}" asset doesn't have a required field " ${item}"`
-                    );
-                  }
-                });
-
-                const dataFields = Object.keys(result);
-                const rentedKeys = [
-                  "vendor",
-                  "rent",
-                  "deposit",
-                  "rentStartDate",
-                  "rentEndDate",
-                  "empId",
-                  "allocationTime",
-                  "brandName",
-                  "isRented",
-                ];
-
-                dataFields?.map((item) => {
-                  // @ts-ignore
-                  const value = result[item];
-                  if (item === "isRented" && value === 0) {
-                    delete result?.vendor;
-                    delete result?.rent;
-                    delete result?.deposit;
-                    delete result?.rentStartDate;
-                    delete result?.rentEndDate;
-                  } else if (
-                    !requiredFields?.includes(item) &&
-                    !rentedKeys?.includes(item)
-                  ) {
-                    // @ts-ignore
-                    delete result[item];
-                  }
-                });
-                ///// brandcheck
-                const brand = await db("brands")
-                  .select("brandId")
-                  .where("name", "=", result?.brandName);
-                if (!brand[0]?.brandId) {
-                  throw new Error(`Brand: ${result?.brandName} doesn't exist!`);
-                }
-                delete result["brandName"];
-                result.brandId = brand[0]?.brandId;
-                if (
-                  filterr?.status.includes(result?.status) &&
-                  result?.status.toLowerCase() === "allocated"
-                ) {
-                  const exist = await exists("empId", result?.empId);
-                  if (!exist) {
-                    throw new Error(
-                      `"${result?.name}" asset doesn't have a valid Employee Id`
-                    );
-                  }
-                }
-                return result;
-              });
-              //////////////////////////////////////////////////
-              const resAssets: Asset[] = await Promise.all(allAssets);
+            });
+            //////////////////////////////////////////////////
+            const resAssets: Asset[] = await Promise.all(allAssets)
               const allocatedEmp = resAssets?.map((asset) => {
                 if (asset?.status.toLowerCase() === "allocated") {
                   const obj = {
@@ -647,18 +627,13 @@ router.post(
               res.status(400).json({
                 error: "duplicate Data",
                 errorMsg: error,
-              });
-            } else if (error?.toString().includes("required")) {
+              })
+            } else if(error?.toString().includes('asset')){
               res.status(400).json({
                 error: `${error}`,
-                errorMsg: error,
-              });
-            } else if (error?.toString().includes("exist")) {
-              res.status(400).json({
-                error: `${error}`,
-                errorMsg: error,
-              });
-            } else if (error?.toString().includes("csv")) {
+                errorMsg: error
+              })
+            } else  if(error?.toString().includes('csv')){
               res.status(400).json({
                 error: `${error}`,
                 errorMsg: error,
