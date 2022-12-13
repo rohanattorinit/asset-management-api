@@ -550,7 +550,7 @@ router.post(
                     .select("brandId")
                     .where("name", "=", result?.brandName)
                     if(!brand[0]?.brandId){
-                     throw new Error( `Brand: ${result?.brandName} doesn't exist!`)
+                     throw new Error( `Brand:asset ${result?.brandName} doesn't exist!`)
                    }
                       delete result["brandName"];
                       result.brandId = brand[0]?.brandId;
