@@ -1038,7 +1038,7 @@ router.get("/filterOptions/", async (req: Request, res: Response) => {
             }
           });
         })
-        .orderBy("filtercategories.categories", "desc");
+        .orderBy("filtercategories.filter_categories_id", "desc");
 
       const brandsArr = brands?.map((brand: any) => {
         return { fields: brand?.brandName, filter_name: "brandName" };
