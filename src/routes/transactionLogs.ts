@@ -55,13 +55,13 @@ router.get("/categoryCount", async (req: Request, res: Response) => {
     const totalAssets = await db
       .select("category")
       .from("assets")
-      .count("* as count")
+      .count("* as count").where({is_active:true})
       .groupBy("category");
     // get total count of surplus assets
     const surplusCount = await db
       .select("category")
       .from("assets")
-      .count("* as count")
+      .count("* as count").where({is_active:true})
       .groupBy("category")
       .where("status", "Surplus");
 
