@@ -113,7 +113,8 @@ router.get("/", async (req, res: Response) => {
       "assets.is_active"
     )
     .join("brands", "assets.brandId", "=", "brands.brandId")
-    .orderBy("assets.is_active", "desc")
+    .orderBy("assets.assetId")
+    //.orderBy("assets.is_active", "desc")
     .modify((queryBuilder) => {
       if (allocate === "true") {
         queryBuilder?.where("status", `Surplus`);
