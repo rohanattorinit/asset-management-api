@@ -113,7 +113,6 @@ router.get("/", async (req, res: Response) => {
       "assets.is_active"
     )
     .join("brands", "assets.brandId", "=", "brands.brandId")
-    .orderBy("assets.assetId", "asc")
     //.orderBy("assets.is_active", "desc")
     .modify((queryBuilder) => {
       if (allocate === "true") {
@@ -124,6 +123,7 @@ router.get("/", async (req, res: Response) => {
       }
     })
     .where("assets.name", "like", `%${name}%`)
+    .orderBy("assets.assetId", "asc")
     .then((data) => {
       res.status(200).json({
         message: "All assets fetched successfully",
