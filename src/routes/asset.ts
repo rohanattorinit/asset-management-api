@@ -841,6 +841,7 @@ router.post("/filter", async (req: Request, res: Response) => {
       )
       .join("brands", "assets.brandId", "=", "brands.brandId")
       .orderBy("assets.is_active", "desc")
+      .orderBy("assets.assetId", "desc")
       // .where("is_active", true)
       .modify((queryBuilder) => {
         if (allocate === "true") {
