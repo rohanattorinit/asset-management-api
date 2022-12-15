@@ -113,7 +113,7 @@ router.get("/", async (req, res: Response) => {
       "assets.is_active"
     )
     .join("brands", "assets.brandId", "=", "brands.brandId")
-    .orderBy("assets.assetId")
+    .orderBy("assets.assetId", "asc")
     //.orderBy("assets.is_active", "desc")
     .modify((queryBuilder) => {
       if (allocate === "true") {
