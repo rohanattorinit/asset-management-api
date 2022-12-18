@@ -10,6 +10,7 @@ app.use(cookieParser())
 app.use(express.json())
 app.use(cors())
 
+
 import employeeRoute from './routes/employees'
 import brandsRoute from './routes/brands'
 import adminRoute from './routes/admin'
@@ -24,5 +25,6 @@ app.use('/api/brands', brandsRoute)
 app.use('/api/assets', assetRoute)
 app.use('/api/tickets', ticketRoute)
 app.use('/api/transactions', transactionRoute)
-// module.exports.handler = serverless(app);
-app.listen(port, () => console.log(`Server Started at port: ${port}!`))
+module.exports.handler = serverless(app);
+//app.listen(port, () => console.log(`Server Started at port: ${port}!`))
+

@@ -55,13 +55,15 @@ router.get("/categoryCount", async (req: Request, res: Response) => {
     const totalAssets = await db
       .select("category")
       .from("assets")
-      .count("* as count").where({is_active:true})
+      .count("* as count")
+      .where({ is_active: true })
       .groupBy("category");
     // get total count of surplus assets
     const surplusCount = await db
       .select("category")
       .from("assets")
-      .count("* as count").where({is_active:true})
+      .count("* as count")
+      .where({ is_active: true })
       .groupBy("category")
       .where("status", "Surplus");
 
@@ -86,13 +88,18 @@ router.get("/categoryCount", async (req: Request, res: Response) => {
         db("assets")
           .count("*")
           .where({ is_active: true })
+          .andWhere({ status: "Allocated" })
+          .as("allocatedAssets"),
+        db("assets")
+          .count("*")
+          .where({ is_active: true })
           .andWhere({ status: "Repairable" })
           .as("RepairabaleAssets"),
         db("assets").count("*").where({ status: "Broken" }).as("brokenAssets"),
         db("assets")
           .count("*")
           .where({ status: "Surplus" })
-          .orWhere({status:"Allocated"})
+          .orWhere({ status: "Allocated" })
           .andWhere({ is_active: true })
           .as("WorkingAssets")
       )
