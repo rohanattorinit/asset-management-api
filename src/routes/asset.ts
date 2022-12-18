@@ -269,14 +269,33 @@ router.get("/employeeAssets/:empId", isAuth, async (req, res) => {
     .join("assets", "assetallocation.assetId", "=", "assets.assetId")
     .join("brands", "assets.brandId", "=", "brands.brandid")
     .where("assetallocation.empId", empId)
-    .then((data) => {
+    .then(async(data) => {
+      let mergedArray = [...data]
+      if(data?.length){
+        // get pending tickets count for all employee assets
+        const pendingTickets = await db('tickets').select('assetId').count('ticketId as pendingTickets').where('empId',empId).andWhere(function(){
+          this.select('*')
+          .from('tickets')
+          .where('ticketStatus', 'pending')
+          .orWhere('ticketStatus','active')
+        }).groupBy('assetId');
+        
+        //merge count of pending tickets with asset data
+        if(pendingTickets?.length){
+          const result = data?.map(asset => {
+            const item2 = pendingTickets?.find(i => i?.assetId === asset?.assetId);
+            return { ...asset, ...item2 };
+          });
+          mergedArray = result;
+        }
+      }
       res.status(200).json({
         message: `All assets fetched for employee: ${empId} successfully`,
-        data: data,
+        data: mergedArray,
       });
     })
     .catch((error) => {
-      res.status(400).json({ error });
+      res.status(400).json({ error:'Error occured while trying to fetch employee asset details' });
     });
 });
 
