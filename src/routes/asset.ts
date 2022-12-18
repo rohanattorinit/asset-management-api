@@ -255,31 +255,49 @@ router.get(
 )
 
 //get all assets of a single employee
-router.get('/employeeAssets/:empId', async (req, res) => {
-  const { empId } = req.params
-  db.select('*')
-    // .count('tickets.ticketId as count')
-    .from('assetallocation')
-    .join('assets', 'assetallocation.assetId', '=', 'assets.assetId')
-    .join('brands', 'assets.brandId', '=', 'brands.brandId')
-    .join('tickets', 'assets.assetId', '=', 'tickets.assetId')
-    .where('assetallocation.empId', empId)
-    .whereNotNull('assetallocation.empId')
-    .andWhere(function () {
-      this.where('ticketStatus', 'pending').orWhere('ticketStatus', 'active')
-    })
-    .then(async data => {
-      console.log(data)
-
+router.get("/employeeAssets/:empId", isAuth, async (req, res) => {
+  const { empId } = req.params;
+  db.select(
+    "assets.assetId",
+    "assets.name",
+    "assets.modelno",
+    "assets.category",
+    "assetallocation.allocationTime",
+    "assets.description"
+  )
+    .from("assetallocation")
+    .join("assets", "assetallocation.assetId", "=", "assets.assetId")
+    .join("brands", "assets.brandId", "=", "brands.brandid")
+    .where("assetallocation.empId", empId)
+    .then(async(data) => {
+      let mergedArray = [...data]
+      if(data?.length){
+        // get pending tickets count for all employee assets
+        const pendingTickets = await db('tickets').select('assetId').count('ticketId as pendingTickets').where('empId',empId).andWhere(function(){
+          this.select('*')
+          .from('tickets')
+          .where('ticketStatus', 'pending')
+          .orWhere('ticketStatus','active')
+        }).groupBy('assetId');
+        
+        //merge count of pending tickets with asset data
+        if(pendingTickets?.length){
+          const result = data?.map(asset => {
+            const item2 = pendingTickets?.find(i => i?.assetId === asset?.assetId);
+            return { ...asset, ...item2 };
+          });
+          mergedArray = result;
+        }
+      }
       res.status(200).json({
         message: `All assets fetched for employee: ${empId} successfully`,
-        data: data
-      })
+        data: mergedArray,
+      });
     })
-    .catch(error => {
-      res.status(400).json({ error })
-    })
-})
+    .catch((error) => {
+      res.status(400).json({ error:'Error occured while trying to fetch employee asset details' });
+    });
+});
 
 //create a new asset
 router.post('/addAsset', isAuth, isAdmin, async (req, res) => {
